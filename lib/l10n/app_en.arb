@@ -1,0 +1,14 @@
+{
+  "language": "Language",
+  "setLanguage": "Set the language",
+  "followSystem": "Automatic",
+  "languageFollowSystemDescription": "Note: System presets only support languages from the list below.",
+  "appTitle": "Flutter Demo",
+  "@appTitle": {
+    "description": "The title of the application"
+  },
+  "welcome": "Welcome",
+  "@welcome": {
+    "description": "Welcome message"
+  }
+}

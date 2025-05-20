@@ -1,0 +1,46 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_demo/router/router.dart';
+
+extension Context on BuildContext {
+  // 不带参数的跳转
+  Future<T?> routeTo<T extends Object?>(Type router) {
+    return MyRouter.routeTo(this, router);
+  }
+  
+  // 保留当前页面，跳转到应用内的某个页面
+  Future<T?> navigateTo<T extends Object?>(Type router, {Object? arguments}) {
+    return MyRouter.navigateTo<T>(this, router, arguments: arguments);
+  }
+
+  // 关闭当前页面，跳转到应用内的某个页面
+  Future<T?> redirectTo<T extends Object?, TO extends Object?>(Type router, {Object? arguments, TO? result}) {
+    return MyRouter.redirectTo<T, TO>(this, router, arguments: arguments, result: result);
+  }
+
+  // 关闭所有页面，打开到应用内的某个页面
+  Future<T?> reLaunch<T extends Object?>(Type router, {Object? arguments}) {
+    return MyRouter.reLaunch<T>(this, router, arguments: arguments);
+  }
+
+  // 获取当前页面栈信息
+  List<RouteInfo> getRouteStack() {
+    return MyRouter.getRouteStack(this);
+  }
+
+  // 关闭当前页面，返回上一页面或多级页面
+  void navigateBack<T>([T? result]) {
+    if (result != null) {
+      Navigator.pop(this, result);
+    } else {
+      MyRouter.navigateBack(this);
+    }
+  }
+  
+  // 通过这种方式，可以先获取页面对象的实例
+  // 然后通过实例对象去调用 arguments 方法，最后调用 to 即可完成路由跳转
+  RT routeOf<RT extends RouterBridge>() {
+    assert(RT != RouterBridge<dynamic>,
+        "You must specify the route type, for example: \"context.routeOf<Page>()\";");
+    return MyRouter.of<RT>(this);
+  }
+}

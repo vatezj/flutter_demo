@@ -1,0 +1,9 @@
+# l10n.yaml
+arb-dir: lib/l10n
+format: true
+output-class: AppL10n
+output-dir: lib/l10n/gen
+output-localization-file: app_localizations.dart
+template-arb-file: app_zh.arb
+synthetic-package: false
+nullable-getter: false
