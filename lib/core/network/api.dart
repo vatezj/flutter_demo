@@ -1,4 +1,4 @@
- import 'package:flutter_demo/network/http.dart';
+ import 'package:flutter_demo/core/network/http.dart';
 
 /// API 接口类
 class Api {

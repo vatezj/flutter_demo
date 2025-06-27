@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_demo/router/router.dart';
-import 'package:flutter_demo/router/context_extentison.dart';
+import 'package:flutter_demo/router/context_extension.dart';
 
 class PageArgs {
   final int id;
@@ -27,6 +27,8 @@ class PageResult {
 }
 
 class MyPage extends StatefulWidget with RouterBridge<PageArgs> {
+  const MyPage({super.key});
+
   @override
   State<MyPage> createState() => _MyPageState();
 }
