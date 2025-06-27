@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_demo/router/router.dart';
+import 'package:flutter_demo/core/router/router.dart';
 
 extension Context on BuildContext {
   // 不带参数的跳转

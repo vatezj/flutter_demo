@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_demo/pages/home/indexPage.dart';
 import 'package:flutter_demo/pages/login/loginPage.dart';
 import 'package:flutter_demo/pages/my/myPage.dart';
-import 'package:flutter_demo/router/RouteHelper.dart';
-import 'package:flutter_demo/router/middleware.dart';
+import 'package:flutter_demo/core/router/RouteHelper.dart';
+import 'package:flutter_demo/core/router/middleware.dart';
 
 const Type _HOME_ = IndexPage;
 

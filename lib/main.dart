@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_demo/pages/home/indexPage.dart';
-import 'package:flutter_demo/router/router.dart';
-import 'package:flutter_demo/router/middleware.dart';
+import 'package:flutter_demo/core/router/router.dart';
+import 'package:flutter_demo/core/router/middleware.dart';
 
 import 'package:flutter_demo/l10n/gen/app_localizations.dart';
 

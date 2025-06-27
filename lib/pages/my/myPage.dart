@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_demo/router/router.dart';
-import 'package:flutter_demo/router/context_extension.dart';
+import 'package:flutter_demo/core/router/router.dart';
+import 'package:flutter_demo/core/router/context_extension.dart';
 
 class PageArgs {
   final int id;
