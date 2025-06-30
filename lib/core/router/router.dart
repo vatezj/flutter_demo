@@ -1,9 +1,14 @@
 // 为了更方便直观的修改，将路由定义提前
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_demo/pages/home/details.dart';
 import 'package:flutter_demo/pages/home/indexPage.dart';
+import 'package:flutter_demo/pages/category/categoryPage.dart';
+import 'package:flutter_demo/pages/cart/cartPage.dart';
+import 'package:flutter_demo/pages/home/info.dart';
 import 'package:flutter_demo/pages/login/loginPage.dart';
 import 'package:flutter_demo/pages/my/myPage.dart';
+import 'package:flutter_demo/pages/BottomMenuBarPage.dart';
 import 'package:flutter_demo/core/router/RouteHelper.dart';
 import 'package:flutter_demo/core/router/middleware.dart';
 
@@ -11,8 +16,13 @@ const Type _HOME_ = IndexPage;
 
 final _routes = RouteHelper.routeDefine({
   IndexPage: (_) => IndexPage(),
+  CategoryPage: (_) => CategoryPage(),
+  CartPage: (_) => CartPage(),
   MyPage: (_) => MyPage(),
   LoginPage: (_) => LoginPage(),
+  DetailsPage: (_) => DetailsPage(),
+  InfoPage: (_) => InfoPage(),
+  BottomMenuBarPage: (_) => BottomMenuBarPage(),
 });
 
 /// 路由管理核心类 - 单例模式
@@ -87,12 +97,23 @@ class CoreRouter {
   
   /// 创建路由页面
   static Route<T> _createRoute<T>(String routeName, Object? arguments) {
+    print('CoreRouter._createRoute - 创建路由: $routeName');
     final builder = ROUTES[routeName] ?? ROUTES[INDEX]!;
     return MaterialPageRoute<T>(
       builder: builder,
       settings: RouteSettings(name: routeName, arguments: arguments),
     );
   }
+
+    static Route<T> createRoute<T>(String routeName, Object? arguments) {
+    print('CoreRouter._createRoute - 创建路由: $routeName');
+    final builder = ROUTES[routeName] ?? ROUTES[INDEX]!;
+    return MaterialPageRoute<T>(
+      builder: builder,
+      settings: RouteSettings(name: routeName, arguments: arguments),
+    );
+  }
+
 
   /// 不带任何参数的路由跳转
   static Future<T?> routeTo<T>(BuildContext context, Type router) {
@@ -137,10 +158,14 @@ class CoreRouter {
     _validateRoute(router);
     final name = RouteHelper.typeName(router);
     
+    print('CoreRouter.reLaunch - 路由名称: $name');
+    
     // 执行中间件检查
     final canProceed = await _executeMiddleware(context, name, arguments);
     if (!canProceed) return null;
 
+    print('CoreRouter.reLaunch - 中间件通过，开始跳转');
+    
     return Navigator.pushAndRemoveUntil<T>(
       context,
       _createRoute<T>(name, arguments),

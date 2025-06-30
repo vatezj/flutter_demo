@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_demo/pages/home/indexPage.dart';
-import 'package:flutter_demo/core/router/router.dart';
-import 'package:flutter_demo/core/router/middleware.dart';
-
+import 'package:flutter_demo/core/init/app_init.dart';
+import 'package:flutter_demo/core/router/app_router.dart';
+import 'package:flutter_demo/core/config/app_config.dart';
+import 'package:flutter_demo/core/provider/app_providers.dart';
 import 'package:flutter_demo/l10n/gen/app_localizations.dart';
 
 void main() {
-  // 注册中间件
-  CoreRouter.middlewareManager.register(AuthMiddleware());
-
+  // 初始化应用
+  AppInit.init();
+  
   runApp(const MyApp());
 }
 
@@ -17,12 +17,16 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: IndexPage(),
-      routes: CoreRouter.ROUTES,
-      locale: const Locale("en"), // "zh" | "zh", "TW"
-      supportedLocales: AppL10n.supportedLocales,
-      localizationsDelegates: AppL10n.localizationsDelegates,
+    return AppProviders.getMultiProvider(
+      child: MaterialApp(
+        title: AppConfig.appName,
+        theme: AppConfig.theme,
+        initialRoute: AppConfig.initialRoute,
+        onGenerateRoute: AppRouter.onGenerateRoute,
+        locale: AppConfig.defaultLocale,
+        supportedLocales: AppL10n.supportedLocales,
+        localizationsDelegates: AppL10n.localizationsDelegates,
+      ),
     );
   }
 }

@@ -57,16 +57,16 @@ class AuthMiddleware extends RouteMiddleware {
       return true;
     }
 
-    print('[$name] 开始权限验证');
-    final bool isAuthenticated = await _checkAuth();
-    if (!isAuthenticated) {
-      print('[$name] 权限验证失败，跳转到登录页');
-      // 未登录，跳转到登录页
-      context.navigateTo(LoginPage);
-      return false;
-    }
+    // print('[$name] 开始权限验证');
+    // final bool isAuthenticated = await _checkAuth();
+    // if (!isAuthenticated) {
+    //   print('[$name] 权限验证失败，跳转到登录页');
+    //   // 未登录，跳转到登录页
+    //   context.navigateTo(LoginPage);
+    //   return false;
+    // }
     
-    print('[$name] 权限验证通过');
+    // print('[$name] 权限验证通过');
     return true;
   }
 
