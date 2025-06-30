@@ -67,6 +67,9 @@ class _BottomMenuBarPageState extends State<BottomMenuBarPage>
     super.initState();
     print('BottomMenuBarPage initState - 开始初始化');
     
+    // 重置初始化标志位
+    _didInitTab = false;
+    
     _pageController = PageController();
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 300),
@@ -98,7 +101,10 @@ class _BottomMenuBarPageState extends State<BottomMenuBarPage>
   }
 
   void _initializeTab() {
-    if (_didInitTab) return;
+    if (_didInitTab) {
+      print('BottomMenuBarPage._initializeTab - 已经初始化过，跳过');
+      return;
+    }
     
     print('BottomMenuBarPage._initializeTab - 开始初始化');
     
@@ -118,6 +124,10 @@ class _BottomMenuBarPageState extends State<BottomMenuBarPage>
     print('BottomMenuBarPage._initializeTab - 最终targetRoute: $targetRoute');
     
     final tabProvider = context.read<TabProvider>();
+    
+    // 重置TabProvider状态，确保每次都是干净的状态
+    tabProvider.reset();
+    
     final initialIndex = tabProvider.getIndexFromRoute(targetRoute ?? 'IndexPage');
     
     print('BottomMenuBarPage._initializeTab - initialIndex: $initialIndex, currentIndex: ${tabProvider.currentIndex}');
@@ -352,6 +362,7 @@ class _BottomMenuBarPageState extends State<BottomMenuBarPage>
 
   @override
   void dispose() {
+    print('BottomMenuBarPage dispose - 清理资源');
     _pageController.dispose();
     _animationController.dispose();
     super.dispose();

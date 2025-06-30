@@ -60,6 +60,13 @@ class TabProvider extends ChangeNotifier {
     }
   }
 
+  /// 重置TabProvider状态
+  void reset() {
+    _currentIndex = 0;
+    print('TabProvider: 重置状态到首页');
+    notifyListeners();
+  }
+
   /// 根据路由名称切换tab
   void switchTabByRoute(String route) {
     final index = getIndexFromRoute(route);

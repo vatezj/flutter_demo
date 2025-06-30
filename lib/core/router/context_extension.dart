@@ -5,6 +5,7 @@ import 'package:flutter_demo/core/router/router.dart';
 import 'package:flutter_demo/core/provider/tab_provider.dart';
 import 'package:flutter_demo/core/router/RouteHelper.dart';
 import 'package:flutter_demo/pages/BottomMenuBarPage.dart';
+import 'package:flutter_demo/core/router/app_router.dart';
 
 extension Context on BuildContext {
   // 不带参数的跳转
@@ -70,24 +71,32 @@ extension Context on BuildContext {
         }
         return Future.value(null);
       } else {
-        // 如果不是tabs页面，直接跳转到BottomMenuBarPage
-        print('Context.switchTab - 不是tabs页面，直接跳转到BottomMenuBarPage');
-        return Navigator.of(this).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => BottomMenuBarPage(initialRoute: routeName),
-            settings: RouteSettings(name: 'BottomMenuBarPage', arguments: routeName),
-          ),
+        // 如果不是tabs页面，使用pushAndRemoveUntil确保页面栈一致性
+        print('Context.switchTab - 不是tabs页面，使用pushAndRemoveUntil跳转到BottomMenuBarPage');
+        final route = AppRouter.onGenerateRoute(
+          RouteSettings(name: 'BottomMenuBarPage', arguments: routeName),
         );
+        if (route != null) {
+          return Navigator.of(this).pushAndRemoveUntil<T>(
+            route as Route<T>,
+            (route) => false, // 移除所有页面
+          );
+        }
+        return Future.value(null);
       }
     } else {
-      // 非tabs页面，直接跳转到BottomMenuBarPage
-      print('Context.switchTab - 非tabs页面，直接跳转到BottomMenuBarPage');
-      return Navigator.of(this).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => BottomMenuBarPage(initialRoute: routeName),
-          settings: RouteSettings(name: 'BottomMenuBarPage', arguments: routeName),
-        ),
+      // 非tabs页面，使用pushAndRemoveUntil确保页面栈一致性
+      print('Context.switchTab - 非tabs页面，使用pushAndRemoveUntil跳转到BottomMenuBarPage');
+      final route = AppRouter.onGenerateRoute(
+        RouteSettings(name: 'BottomMenuBarPage', arguments: routeName),
       );
+      if (route != null) {
+        return Navigator.of(this).pushAndRemoveUntil<T>(
+          route as Route<T>,
+          (route) => false, // 移除所有页面
+        );
+      }
+      return Future.value(null);
     }
   }
 
