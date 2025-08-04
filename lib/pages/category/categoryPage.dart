@@ -1,19 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_demo/pages/home/indexPage.dart';
 import 'package:flutter_demo/pages/cart/cartPage.dart';
 import 'package:flutter_demo/pages/my/myPage.dart';
 import 'package:flutter_demo/core/router/context_extension.dart';
+import 'package:flutter_demo/pages/category/category_view_model.dart';
+import 'package:flutter_demo/core/mvvm/tab_view_model.dart';
 
-class CategoryPage extends StatefulWidget {
+class CategoryPage extends HookConsumerWidget {
   const CategoryPage({Key? key}) : super(key: key);
 
   @override
-  State<CategoryPage> createState() => _CategoryPageState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    // 监听 ViewModel 状态
+    final categoryState = ref.watch(categoryStateProvider);
+    final categoryViewModel = ref.read(categoryViewModelProvider.notifier);
+    final tabViewModel = ref.read(tabViewModelProvider.notifier);
+    
+     // 切换 Tab
+    void switchToTab(String route) {
+      tabViewModel.switchToRoute(route);
+    }
 
-class _CategoryPageState extends State<CategoryPage> {
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('分类'),
@@ -45,6 +54,77 @@ class _CategoryPageState extends State<CategoryPage> {
                 color: Colors.grey,
               ),
             ),
+            
+            // KeepAlive 测试区域
+            const SizedBox(height: 30),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.green.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                children: [
+                  const Text(
+                    'KeepAlive 测试 - 计数器',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '当前计数: ${categoryState.counter}',
+                    style: const TextStyle(fontSize: 18, color: Colors.green),
+                  ),
+                  const SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: categoryViewModel.incrementCounter,
+                    child: const Text('增加计数'),
+                  ),
+                  const Text(
+                    '切换到其他Tab再回来，计数应该保持不变',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
+              ),
+            ),
+            
+            // 分类列表
+            const SizedBox(height: 30),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.blue.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                children: [
+                  const Text(
+                    '分类列表',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 10),
+                  ...categoryState.categories.map((category) => ListTile(
+                    title: Text(category),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete),
+                      onPressed: () {
+                        final index = categoryState.categories.indexOf(category);
+                        if (index >= 0) {
+                          categoryViewModel.removeCategory(index);
+                        }
+                      },
+                    ),
+                  )),
+                  ElevatedButton(
+                    onPressed: () {
+                      final newCategory = '新分类${categoryState.categories.length + 1}';
+                      categoryViewModel.addCategory(newCategory);
+                    },
+                    child: const Text('添加分类'),
+                  ),
+                ],
+              ),
+            ),
+            
             const SizedBox(height: 30),
             ElevatedButton(
               onPressed: () {
@@ -62,15 +142,15 @@ class _CategoryPageState extends State<CategoryPage> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 ElevatedButton(
-                  onPressed: () => context.switchTab(IndexPage),
+                  onPressed: () => switchToTab('IndexPage'),
                   child: const Text('切换到首页'),
                 ),
                 ElevatedButton(
-                  onPressed: () => context.switchTab(CartPage),
+                  onPressed: () => switchToTab('CartPage'),
                   child: const Text('切换到购物车'),
                 ),
                 ElevatedButton(
-                  onPressed: () => context.switchTab(MyPage),
+                  onPressed: () => switchToTab('MyPage'),
                   child: const Text('切换到我的'),
                 ),
               ],

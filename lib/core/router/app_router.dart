@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_demo/pages/BottomMenuBarPage.dart';
 import 'package:flutter_demo/core/router/router.dart';
-import 'package:flutter_demo/core/provider/tab_provider.dart';
+import 'package:flutter_demo/core/mvvm/tab_view_model.dart';
 
 /// 应用路由管理器
 class AppRouter {
+  /// 初始路由
+  static const String initialRoute = 'BottomMenuBarPage';
+  
   /// 生成应用路由
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     print('AppRouter onGenerateRoute: ${settings.name}, arguments: ${settings.arguments}');
@@ -12,7 +15,7 @@ class AppRouter {
     final routeName = settings.name ?? 'BottomMenuBarPage';
     
     // 检查是否是tabs页面
-    if (TabProvider.isTabRoute(routeName)) {
+    if (TabRoute.isTabRoute(routeName)) {
       print('AppRouter: 创建BottomMenuBarPage，initialRoute: $routeName');
       // 如果是tabs页面，显示带底部导航栏的页面
       return MaterialPageRoute(

@@ -84,10 +84,17 @@ class _DetailsPageState extends State<DetailsPage> {
 
              ElevatedButton(
               onPressed: () {
-                // 返回取消结果
-                context.navigateTo(InfoPage, arguments: InfoPageArgs(id: 1, name: '测试'));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const InfoPage(),
+                    settings: RouteSettings(
+                      arguments: DetailsPageArgs(id: (_args?.id ?? 0) + 1, name: '${_args?.name ?? ''} - 详情'),
+                    ),
+                  ),
+                );
               },
-              child: Text('跳转InfoPage'),
+              child: const Text('跳转到信息页面'),
             ),
           ],
         ),

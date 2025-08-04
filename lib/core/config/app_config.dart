@@ -7,16 +7,25 @@ class AppConfig {
   static const String initialRoute = 'BottomMenuBarPage';
   
   // 主题配置
-  static ThemeData get theme => ThemeData(
+  static ThemeData get lightTheme => ThemeData(
     primarySwatch: Colors.blue,
     visualDensity: VisualDensity.adaptivePlatformDensity,
+    brightness: Brightness.light,
+    useMaterial3: true,
+  );
+  
+  static ThemeData get darkTheme => ThemeData(
+    primarySwatch: Colors.blue,
+    visualDensity: VisualDensity.adaptivePlatformDensity,
+    brightness: Brightness.dark,
+    useMaterial3: true,
   );
   
   // 国际化配置
-  static const Locale defaultLocale = Locale("en");
+  static const Locale defaultLocale = Locale("zh", "CN");
   static const List<Locale> supportedLocales = [
-    Locale("en"),
-    Locale("zh"),
+    Locale("zh", "CN"),
+    Locale("en", "US"),
   ];
   
   // 路由配置

@@ -1,15 +1,42 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_demo/core/router/context_extension.dart';
-import 'package:provider/provider.dart';
-import 'package:flutter_demo/core/router/router.dart';
-import 'package:flutter_demo/core/provider/tab_provider.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:flutter_demo/core/mvvm/tab_view_model.dart';
 import 'package:flutter_demo/pages/home/indexPage.dart';
 import 'package:flutter_demo/pages/category/categoryPage.dart';
 import 'package:flutter_demo/pages/cart/cartPage.dart';
 import 'package:flutter_demo/pages/my/myPage.dart';
 import 'package:flutter/services.dart';
 
-class BottomMenuBarPage extends StatefulWidget with RouterBridge<String> {
+// KeepAlive包装组件
+class KeepAliveWrapper extends StatefulWidget {
+  final Widget child;
+  final String routeName;
+
+  const KeepAliveWrapper({
+    Key? key,
+    required this.child,
+    required this.routeName,
+  }) : super(key: key);
+
+  @override
+  State<KeepAliveWrapper> createState() => _KeepAliveWrapperState();
+}
+
+class _KeepAliveWrapperState extends State<KeepAliveWrapper>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context); // 必须调用super.build
+    print('KeepAliveWrapper build - ${widget.routeName}');
+    return widget.child;
+  }
+}
+
+class BottomMenuBarPage extends HookConsumerWidget {
   final String? initialRoute;
   
   const BottomMenuBarPage({
@@ -18,477 +45,241 @@ class BottomMenuBarPage extends StatefulWidget with RouterBridge<String> {
   }) : super(key: key);
 
   @override
-  State<BottomMenuBarPage> createState() => _BottomMenuBarPageState();
-}
-
-class _BottomMenuBarPageState extends State<BottomMenuBarPage>
-    with TickerProviderStateMixin {
-  late PageController _pageController;
-  late AnimationController _animationController;
-  bool _didInitTab = false; // 只初始化一次
-
-  // 页面状态管理
-  final List<GlobalKey<NavigatorState>> _navigatorKeys = [
-    GlobalKey<NavigatorState>(),
-    GlobalKey<NavigatorState>(),
-    GlobalKey<NavigatorState>(),
-    GlobalKey<NavigatorState>(),
-  ];
-
-  // 保存所有页面的实例
-  final List<Widget> _pages = [];
-
-  // 底部导航栏配置
-  final List<NavigationItem> _navigationItems = const [
-    NavigationItem(
-      icon: Icons.home_outlined,
-      activeIcon: Icons.home,
-      label: '首页',
-    ),
-    NavigationItem(
-      icon: Icons.category_outlined,
-      activeIcon: Icons.category,
-      label: '分类',
-    ),
-    NavigationItem(
-      icon: Icons.shopping_cart_outlined,
-      activeIcon: Icons.shopping_cart,
-      label: '购物车',
-    ),
-    NavigationItem(
-      icon: Icons.person_outline,
-      activeIcon: Icons.person,
-      label: '我的',
-    ),
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    print('BottomMenuBarPage initState - 开始初始化');
-    
-    // 重置初始化标志位
-    _didInitTab = false;
-    
-    _pageController = PageController();
-    _animationController = AnimationController(
+  Widget build(BuildContext context, WidgetRef ref) {
+    // 使用 Hooks 管理状态
+    final pageController = usePageController();
+    final animationController = useAnimationController(
       duration: const Duration(milliseconds: 300),
-      vsync: this,
     );
-    _initializePages();
     
-    print('BottomMenuBarPage initState - 初始化tab');
-    // 延迟初始化tab，确保所有组件都已构建完成
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && !_didInitTab) {
-        print('BottomMenuBarPage initState - 开始初始化tab');
-        _initializeTab();
+    // 监听 Tab 状态
+    final tabState = ref.watch(tabStateProvider);
+    final tabViewModel = ref.read(tabViewModelProvider.notifier);
+    
+    // 初始化 Tab
+    useEffect(() {
+      if (!tabState.isInitialized) {
+        Future.microtask(() {
+          tabViewModel.initialize(initialRoute);
+        });
       }
-    });
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // 如果还没有初始化，在这里也尝试初始化
-    if (!_didInitTab) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && !_didInitTab) {
-          _initializeTab();
+      return null;
+    }, []);
+    
+    // 当 Tab 状态变化时，自动跳转到对应页面
+    useEffect(() {
+      if (tabState.isInitialized && pageController.hasClients) {
+        final currentPage = pageController.page?.round() ?? 0;
+        if (currentPage != tabState.currentIndex) {
+          print('自动跳转到页面: ${tabState.currentIndex}');
+          Future.microtask(() {
+            pageController.jumpToPage(tabState.currentIndex);
+          });
         }
-      });
-    }
-  }
-
-  void _initializeTab() {
-    if (_didInitTab) {
-      print('BottomMenuBarPage._initializeTab - 已经初始化过，跳过');
-      return;
-    }
+      }
+      return null;
+    }, [tabState.currentIndex]);
     
-    print('BottomMenuBarPage._initializeTab - 开始初始化');
+    // 页面状态管理
+    final navigatorKeys = useMemoized(() => [
+      GlobalKey<NavigatorState>(),
+      GlobalKey<NavigatorState>(),
+      GlobalKey<NavigatorState>(),
+      GlobalKey<NavigatorState>(),
+    ], []);
     
-    String? targetRoute;
-    
-    // 尝试从RouteSettings获取参数
-    final routeSettings = ModalRoute.of(context)?.settings;
-    print('BottomMenuBarPage._initializeTab - routeSettings: ${routeSettings?.name}, arguments: ${routeSettings?.arguments}');
-    
-    if (routeSettings?.arguments != null) {
-      targetRoute = routeSettings!.arguments as String?;
-      print('BottomMenuBarPage._initializeTab - 从RouteSettings获取到targetRoute: $targetRoute');
-    }
-    
-    // 如果RouteSettings中没有参数，使用initialRoute
-    targetRoute ??= widget.initialRoute;
-    print('BottomMenuBarPage._initializeTab - 最终targetRoute: $targetRoute');
-    
-    final tabProvider = context.read<TabProvider>();
-    
-    // 重置TabProvider状态，确保每次都是干净的状态
-    tabProvider.reset();
-    
-    final initialIndex = tabProvider.getIndexFromRoute(targetRoute ?? 'IndexPage');
-    
-    print('BottomMenuBarPage._initializeTab - initialIndex: $initialIndex, currentIndex: ${tabProvider.currentIndex}');
-    
-    // 设置TabProvider状态
-    if (tabProvider.currentIndex != initialIndex) {
-      print('BottomMenuBarPage._initializeTab - 切换TabProvider状态到: $initialIndex');
-      tabProvider.switchTab(initialIndex);
-    }
-    
-    // 直接跳转，不使用延迟
-    if (mounted && _pageController.hasClients) {
-      print('BottomMenuBarPage._initializeTab - 直接跳转到页面: $initialIndex');
-      _pageController.jumpToPage(initialIndex);
-    } else {
-      print('BottomMenuBarPage._initializeTab - PageController未准备好，延迟跳转');
-      // 如果PageController未准备好，延迟跳转
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _pageController.hasClients) {
-          print('BottomMenuBarPage._initializeTab - 延迟跳转到页面: $initialIndex');
-          _pageController.jumpToPage(initialIndex);
-        } else {
-          print('BottomMenuBarPage._initializeTab - 延迟跳转失败，mounted: $mounted, hasClients: ${_pageController.hasClients}');
-        }
-      });
-    }
-    
-    _didInitTab = true;
-    print('BottomMenuBarPage._initializeTab - 初始化完成');
-  }
-
-  void _initializePages() {
-    _pages.addAll([
+    // 保存所有页面的实例
+    final pages = useMemoized(() => [
       Navigator(
-        key: _navigatorKeys[0],
-        onGenerateRoute: (settings) {
-          // 只处理tabs页面
-          if (TabProvider.isTabRoute(settings.name ?? '')) {
-            // 对于tabs页面，直接返回对应的页面，不创建新的BottomMenuBarPage
-            switch (settings.name) {
-              case 'IndexPage':
-                return MaterialPageRoute(
-                  builder: (context) => IndexPage(),
-                  settings: settings,
-                );
-              case 'CategoryPage':
-                return MaterialPageRoute(
-                  builder: (context) => CategoryPage(),
-                  settings: settings,
-                );
-              case 'CartPage':
-                return MaterialPageRoute(
-                  builder: (context) => CartPage(),
-                  settings: settings,
-                );
-              case 'MyPage':
-                return MaterialPageRoute(
-                  builder: (context) => MyPage(),
-                  settings: settings,
-                );
-              default:
-                return MaterialPageRoute(
-                  builder: (context) => IndexPage(),
-                  settings: const RouteSettings(name: 'IndexPage'),
-                );
-            }
-          } else {
-            // 非tabs页面，使用根Navigator跳转
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) {
-                Navigator.of(context, rootNavigator: true).pushNamed(settings.name!);
-              }
-            });
-            // 返回当前页面
-            return MaterialPageRoute(
-              builder: (context) => IndexPage(),
-              settings: const RouteSettings(name: 'IndexPage'),
-            );
-          }
-        },
+        key: navigatorKeys[0],
+        onGenerateRoute: (settings) => _generateRoute(context, settings, const IndexPage(), 'IndexPage'),
         initialRoute: 'IndexPage',
       ),
       Navigator(
-        key: _navigatorKeys[1],
-        onGenerateRoute: (settings) {
-          // 只处理tabs页面
-          if (TabProvider.isTabRoute(settings.name ?? '')) {
-            // 对于tabs页面，直接返回对应的页面，不创建新的BottomMenuBarPage
-            switch (settings.name) {
-              case 'IndexPage':
-                return MaterialPageRoute(
-                  builder: (context) => IndexPage(),
-                  settings: settings,
-                );
-              case 'CategoryPage':
-                return MaterialPageRoute(
-                  builder: (context) => CategoryPage(),
-                  settings: settings,
-                );
-              case 'CartPage':
-                return MaterialPageRoute(
-                  builder: (context) => CartPage(),
-                  settings: settings,
-                );
-              case 'MyPage':
-                return MaterialPageRoute(
-                  builder: (context) => MyPage(),
-                  settings: settings,
-                );
-              default:
-                return MaterialPageRoute(
-                  builder: (context) => CategoryPage(),
-                  settings: const RouteSettings(name: 'CategoryPage'),
-                );
-            }
-          } else {
-            // 非tabs页面，使用根Navigator跳转
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) {
-                Navigator.of(context, rootNavigator: true).pushNamed(settings.name!);
-              }
-            });
-            // 返回当前页面
-            return MaterialPageRoute(
-              builder: (context) => CategoryPage(),
-              settings: const RouteSettings(name: 'CategoryPage'),
-            );
-          }
-        },
+        key: navigatorKeys[1],
+        onGenerateRoute: (settings) => _generateRoute(context, settings, const CategoryPage(), 'CategoryPage'),
         initialRoute: 'CategoryPage',
       ),
       Navigator(
-        key: _navigatorKeys[2],
-        onGenerateRoute: (settings) {
-          // 只处理tabs页面
-          if (TabProvider.isTabRoute(settings.name ?? '')) {
-            // 对于tabs页面，直接返回对应的页面，不创建新的BottomMenuBarPage
-            switch (settings.name) {
-              case 'IndexPage':
-                return MaterialPageRoute(
-                  builder: (context) => IndexPage(),
-                  settings: settings,
-                );
-              case 'CategoryPage':
-                return MaterialPageRoute(
-                  builder: (context) => CategoryPage(),
-                  settings: settings,
-                );
-              case 'CartPage':
-                return MaterialPageRoute(
-                  builder: (context) => CartPage(),
-                  settings: settings,
-                );
-              case 'MyPage':
-                return MaterialPageRoute(
-                  builder: (context) => MyPage(),
-                  settings: settings,
-                );
-              default:
-                return MaterialPageRoute(
-                  builder: (context) => CartPage(),
-                  settings: const RouteSettings(name: 'CartPage'),
-                );
-            }
-          } else {
-            // 非tabs页面，使用根Navigator跳转
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) {
-                Navigator.of(context, rootNavigator: true).pushNamed(settings.name!);
-              }
-            });
-            // 返回当前页面
-            return MaterialPageRoute(
-              builder: (context) => CartPage(),
-              settings: const RouteSettings(name: 'CartPage'),
-            );
-          }
-        },
+        key: navigatorKeys[2],
+        onGenerateRoute: (settings) => _generateRoute(context, settings, const CartPage(), 'CartPage'),
         initialRoute: 'CartPage',
       ),
       Navigator(
-        key: _navigatorKeys[3],
-        onGenerateRoute: (settings) {
-          // 只处理tabs页面
-          if (TabProvider.isTabRoute(settings.name ?? '')) {
-            // 对于tabs页面，直接返回对应的页面，不创建新的BottomMenuBarPage
-            switch (settings.name) {
-              case 'IndexPage':
-                return MaterialPageRoute(
-                  builder: (context) => IndexPage(),
-                  settings: settings,
-                );
-              case 'CategoryPage':
-                return MaterialPageRoute(
-                  builder: (context) => CategoryPage(),
-                  settings: settings,
-                );
-              case 'CartPage':
-                return MaterialPageRoute(
-                  builder: (context) => CartPage(),
-                  settings: settings,
-                );
-              case 'MyPage':
-                return MaterialPageRoute(
-                  builder: (context) => MyPage(),
-                  settings: settings,
-                );
-              default:
-                return MaterialPageRoute(
-                  builder: (context) => MyPage(),
-                  settings: const RouteSettings(name: 'MyPage'),
-                );
-            }
-          } else {
-            // 非tabs页面，使用根Navigator跳转
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) {
-                Navigator.of(context, rootNavigator: true).pushNamed(settings.name!);
-              }
-            });
-            // 返回当前页面
-            return MaterialPageRoute(
-              builder: (context) => MyPage(),
-              settings: const RouteSettings(name: 'MyPage'),
-            );
-          }
-        },
+        key: navigatorKeys[3],
+        onGenerateRoute: (settings) => _generateRoute(context, settings, const MyPage(), 'MyPage'),
         initialRoute: 'MyPage',
       ),
-    ]);
-  }
-
-  @override
-  void dispose() {
-    print('BottomMenuBarPage dispose - 清理资源');
-    _pageController.dispose();
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  void _onTabTapped(int index) {
-    final tabProvider = context.read<TabProvider>();
-    if (tabProvider.currentIndex != index) {
-      print('点击切换到tab: ${tabProvider.getRouteFromIndex(index)}');
-      
-      // 先更新Provider状态
-      tabProvider.switchTab(index);
-      
-      // 使用动画控制器
-      _animationController.forward().then((_) {
-        _animationController.reverse();
-      });
-      
-      // 确保PageController跳转到正确的页面
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _pageController.hasClients && 
-            _pageController.page?.round() != index) {
-          print('PageController准备跳转 - 当前页面: ${_pageController.page?.round()}, 目标页面: $index');
-          _pageController.jumpToPage(index);
-          print('PageController跳转到页面: $index');
-        } else {
-          print('PageController无需跳转 - 当前页面: ${_pageController.page?.round()}, 目标页面: $index');
-        }
-      });
-    }
-  }
-
-  // 公共方法，供外部调用以跳转到指定页面
-  void jumpToPage(int index) {
-    print('BottomMenuBarPage.jumpToPage - 跳转到页面: $index');
-    if (mounted && _pageController.hasClients && 
-        _pageController.page?.round() != index) {
-      _pageController.jumpToPage(index);
-      print('PageController跳转到页面: $index');
-    } else {
-      print('PageController无需跳转 - 当前页面: ${_pageController.page?.round()}, 目标页面: $index');
-    }
-  }
-
-  // 处理返回按钮
-  Future<bool> _onWillPop() async {
-    final tabProvider = context.read<TabProvider>();
-    final NavigatorState? navigator = _navigatorKeys[tabProvider.currentIndex].currentState;
+    ], [navigatorKeys, context]);
     
-    // 如果当前tab的Navigator可以返回，则返回上一页
-    if (navigator != null && navigator.canPop()) {
-      navigator.pop();
-      return false; // 阻止系统返回
+    // 底部导航栏配置
+    final navigationItems = useMemoized(() => const [
+      NavigationItem(
+        icon: Icons.home_outlined,
+        activeIcon: Icons.home,
+        label: '首页',
+      ),
+      NavigationItem(
+        icon: Icons.category_outlined,
+        activeIcon: Icons.category,
+        label: '分类',
+      ),
+      NavigationItem(
+        icon: Icons.shopping_cart_outlined,
+        activeIcon: Icons.shopping_cart,
+        label: '购物车',
+      ),
+      NavigationItem(
+        icon: Icons.person_outline,
+        activeIcon: Icons.person,
+        label: '我的',
+      ),
+    ], []);
+    
+    // Tab 点击处理
+    void onTabTapped(int index) {
+      if (tabState.currentIndex != index) {
+        print('点击切换到tab: ${TabRoute.getRouteFromIndex(index)}');
+        
+        // 更新 Tab 状态
+        Future.microtask(() {
+          tabViewModel.switchTab(index);
+        });
+        
+        // 使用动画控制器
+        animationController.forward().then((_) {
+          animationController.reverse();
+        });
+      }
     }
     
-    // 检查是否是根页面
-    final rootNavigator = Navigator.of(context, rootNavigator: true);
-    if (!rootNavigator.canPop()) {
-      // 如果是根页面，允许退出应用
-      print('BottomMenuBarPage是根页面，允许退出应用');
+    // 处理返回按钮
+    Future<bool> onWillPop() async {
+      final NavigatorState? navigator = navigatorKeys[tabState.currentIndex].currentState;
+      
+      // 如果当前tab的Navigator可以返回，则返回上一页
+      if (navigator != null && navigator.canPop()) {
+        navigator.pop();
+        return false; // 阻止系统返回
+      }
+      
+      // 检查是否是根页面
+      final rootNavigator = Navigator.of(context, rootNavigator: true);
+      if (!rootNavigator.canPop()) {
+        // 如果是根页面，允许退出应用
+        print('BottomMenuBarPage是根页面，允许退出应用');
+        return true;
+      }
+      
+      // 如果不是根页面，允许返回
       return true;
     }
     
-    // 如果不是根页面，允许返回
-    return true;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<TabProvider>(
-      builder: (context, tabProvider, child) {
-        print('BottomMenuBarPage build - currentIndex: ${tabProvider.currentIndex}, mounted: $mounted, hasClients: ${_pageController.hasClients}');
-
-        // 当TabProvider状态变化时，自动跳转到对应页面
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted && _pageController.hasClients && 
-              _pageController.page?.round() != tabProvider.currentIndex) {
-            print('build中PageController自动跳转 - 当前页面: ${_pageController.page?.round()}, 目标页面: ${tabProvider.currentIndex}');
-            _pageController.jumpToPage(tabProvider.currentIndex);
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        print('PopScope onPopInvokedWithResult - didPop: $didPop');
+        if (!didPop) {
+          // 只有当系统没有处理返回操作时，才执行我们的自定义返回逻辑
+          final shouldPop = await onWillPop();
+          print('PopScope - shouldPop: $shouldPop, context.mounted: ${context.mounted}');
+          if (shouldPop && context.mounted) {
+            // 只有在明确允许返回时才执行返回操作
+            print('执行返回操作');
+            // 使用SystemNavigator.pop()来退出应用，而不是Navigator.pop()
+            SystemNavigator.pop();
           } else {
-            print('build中PageController无需跳转 - 当前页面: ${_pageController.page?.round()}, 目标页面: ${tabProvider.currentIndex}, mounted: $mounted, hasClients: ${_pageController.hasClients}');
+            print('阻止返回操作');
           }
-        });
-        
-        return PopScope(
-          canPop: false,
-          onPopInvokedWithResult: (didPop, result) async {
-            print('PopScope onPopInvokedWithResult - didPop: $didPop');
-            if (!didPop) {
-              // 只有当系统没有处理返回操作时，才执行我们的自定义返回逻辑
-              final shouldPop = await _onWillPop();
-              print('PopScope - shouldPop: $shouldPop, context.mounted: ${context.mounted}');
-              if (shouldPop && context.mounted) {
-                // 只有在明确允许返回时才执行返回操作
-                print('执行返回操作');
-                // 使用SystemNavigator.pop()来退出应用，而不是Navigator.pop()
-                SystemNavigator.pop();
-              } else {
-                print('阻止返回操作');
-              }
-            } else {
-              // 如果系统已经处理了返回操作（didPop为true），不需要做任何额外操作
-              print('系统已处理返回操作，无需额外处理');
+        } else {
+          // 如果系统已经处理了返回操作（didPop为true），不需要做任何额外操作
+          print('系统已处理返回操作，无需额外处理');
+        }
+      },
+      child: Scaffold(
+        body: PageView(
+          controller: pageController,
+          onPageChanged: (index) {
+            // 只有当状态不同时才更新，避免重复调用
+            if (tabState.currentIndex != index) {
+              tabViewModel.switchTab(index);
+              print('滑动切换到tab: ${TabRoute.getRouteFromIndex(index)}');
             }
           },
-          child: Scaffold(
-            body: PageView(
-              controller: _pageController,
-              onPageChanged: (index) {
-                // 只有当状态不同时才更新，避免重复调用
-                if (tabProvider.currentIndex != index) {
-                  tabProvider.switchTab(index);
-                  print('滑动切换到tab: ${tabProvider.getRouteFromIndex(index)}');
-                }
-              },
-              children: _pages,
-            ),
-            bottomNavigationBar: CustomBottomNavigationBar(
-              currentIndex: tabProvider.currentIndex,
-              onTap: _onTabTapped,
-              items: _navigationItems,
-            ),
-          ),
-        );
-      },
+          children: pages,
+        ),
+        bottomNavigationBar: CustomBottomNavigationBar(
+          currentIndex: tabState.currentIndex,
+          onTap: onTabTapped,
+          items: navigationItems,
+        ),
+      ),
     );
+  }
+  
+  // 生成路由
+  Route<dynamic> _generateRoute(BuildContext context, RouteSettings settings, Widget defaultWidget, String defaultRoute) {
+    // 只处理tabs页面
+    if (TabRoute.isTabRoute(settings.name ?? '')) {
+      // 对于tabs页面，直接返回对应的页面，不创建新的BottomMenuBarPage
+      switch (settings.name) {
+        case 'IndexPage':
+          return MaterialPageRoute(
+            builder: (context) => KeepAliveWrapper(
+              routeName: 'IndexPage',
+              child: const IndexPage(),
+            ),
+            settings: settings,
+          );
+        case 'CategoryPage':
+          return MaterialPageRoute(
+            builder: (context) => KeepAliveWrapper(
+              routeName: 'CategoryPage',
+              child: const CategoryPage(),
+            ),
+            settings: settings,
+          );
+        case 'CartPage':
+          return MaterialPageRoute(
+            builder: (context) => KeepAliveWrapper(
+              routeName: 'CartPage',
+              child: const CartPage(),
+            ),
+            settings: settings,
+          );
+        case 'MyPage':
+          return MaterialPageRoute(
+            builder: (context) => KeepAliveWrapper(
+              routeName: 'MyPage',
+              child: const MyPage(),
+            ),
+            settings: settings,
+          );
+        default:
+          return MaterialPageRoute(
+            builder: (context) => KeepAliveWrapper(
+              routeName: defaultRoute,
+              child: defaultWidget,
+            ),
+            settings: RouteSettings(name: defaultRoute),
+          );
+      }
+    } else {
+      // 非tabs页面，使用根Navigator跳转
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted) {
+          Navigator.of(context, rootNavigator: true).pushNamed(settings.name!);
+        }
+      });
+      // 返回当前页面
+      return MaterialPageRoute(
+        builder: (context) => KeepAliveWrapper(
+          routeName: defaultRoute,
+          child: defaultWidget,
+        ),
+        settings: RouteSettings(name: defaultRoute),
+      );
+    }
   }
 }
 
@@ -515,7 +306,7 @@ class CustomBottomNavigationBar extends StatelessWidget {
         color: Theme.of(context).scaffoldBackgroundColor,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -545,7 +336,7 @@ class CustomBottomNavigationBar extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           color: isSelected 
-              ? Theme.of(context).primaryColor.withOpacity(0.1)
+              ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
               : Colors.transparent,
         ),
         child: Column(

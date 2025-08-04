@@ -1,6 +1,13 @@
 targets:
   $default:
     builders:
+      # Riverpod 代码生成器
+      riverpod_generator:riverpod_generator:
+        enabled: true
+        generate_for:
+          - lib/core/mvvm/**.dart
+          - lib/pages/*/**_view_model.dart
+      
       # 更改工具默认生成的 xxx.g.dart 的位置
       # 如果不做配置，则默认放置于当前文件的同级目录
       # ---------------------------------- #
@@ -12,7 +19,7 @@ targets:
       source_gen:combining_builder:
         options:
           build_extensions:
-            '^lib/model/{{}}.dart':'lib/model/generated/{{}}.g.dart'
+            '^lib/model/{{}}.dart': 'lib/model/generated/{{}}.g.dart'
       # ---------------------------------- #
       # json_serializable 的全局配置项
       json_serializable:

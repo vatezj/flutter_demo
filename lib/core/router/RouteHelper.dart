@@ -3,7 +3,12 @@ import 'package:flutter/material.dart';
 /// 路由助手类
 class RouteHelper {
   /// 辅助方法，将类名转换成字符串
-  static String typeName(Type type) => type.toString();
+  static String typeName(Type type) {
+    final fullName = type.toString();
+    // 提取类名，去掉包名部分
+    final parts = fullName.split('.');
+    return parts.last;
+  }
   
   /// 路由类型转换辅助方式
   static Map<String, WidgetBuilder> routeDefine(Map<Type, WidgetBuilder> defines) {

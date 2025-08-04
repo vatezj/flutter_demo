@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_demo/pages/home/indexPage.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter_demo/core/router/router.dart';
-import 'package:flutter_demo/core/provider/tab_provider.dart';
+import 'package:flutter_demo/core/mvvm/tab_view_model.dart';
 import 'package:flutter_demo/core/router/RouteHelper.dart';
 import 'package:flutter_demo/pages/BottomMenuBarPage.dart';
 import 'package:flutter_demo/core/router/app_router.dart';
@@ -18,15 +18,13 @@ extension Context on BuildContext {
   //   return CoreRouter.navigateTo<T>(this, router, arguments: arguments);
   // }
 
-  // 跳转到非tabs页面，不显示底部导航栏
-  Future<T?> navigateTo<T extends Object?>(Type router, {Object? arguments}) {
-    print('Context.navigateToNonTab - 调用navigateToNonTab，目标路由: $router');
-
-    // 获取路由名称
+  // 跳转到应用内的某个页面，但不显示底部导航栏
+  Future<T?> navigateToNonTab<T extends Object?>(Type router,
+      {Object? arguments}) {
     final routeName = RouteHelper.typeName(router);
 
     // 检查是否是tabs页面
-    if (TabProvider.isTabRoute(routeName)) {
+    if (TabRoute.isTabRoute(routeName)) {
       print('Context.navigateToNonTab - 错误：不能使用navigateToNonTab跳转到tabs页面');
       return Future.value(null);
     } else {
@@ -57,18 +55,15 @@ extension Context on BuildContext {
     final routeName = RouteHelper.typeName(router);
     print('Context.switchTab - 跳转到指定的tabBar页面，并关闭所有页面: $routeName');
     
-    if (TabProvider.isTabRoute(routeName)) {
+    if (TabRoute.isTabRoute(routeName)) {
       // 检查当前是否已经在tabs页面
       final currentRoute = ModalRoute.of(this)?.settings.name;
-      if (TabProvider.isTabRoute(currentRoute ?? '')) {
+      if (TabRoute.isTabRoute(currentRoute ?? '')) {
         // 如果已经是tabs页面，就切换tabs
         print('Context.switchTab - 已经是tabs页面，切换tabs');
-        final tabProvider = read<TabProvider>();
-        final index = tabProvider.getIndexFromRoute(routeName);
-        if (index != -1 && tabProvider.currentIndex != index) {
-          tabProvider.switchTab(index);
-          // 通过Provider状态变化，BottomMenuBarPage的Consumer会自动重建并跳转页面
-        }
+        // 注意：这里需要在使用时通过 ProviderScope 获取 tabViewModel
+        // 由于 context 扩展方法无法直接访问 Provider，这里暂时跳过
+        // 实际使用时应该在 Widget 中通过 ref.read(tabViewModelProvider) 来调用
         return Future.value(null);
       } else {
         // 如果不是tabs页面，使用pushAndRemoveUntil确保页面栈一致性

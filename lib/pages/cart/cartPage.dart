@@ -1,19 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_demo/pages/home/indexPage.dart';
 import 'package:flutter_demo/pages/category/categoryPage.dart';
 import 'package:flutter_demo/pages/my/myPage.dart';
 import 'package:flutter_demo/core/router/context_extension.dart';
+import 'package:flutter_demo/pages/cart/cart_view_model.dart';
+import 'package:flutter_demo/core/mvvm/tab_view_model.dart';
 
-class CartPage extends StatefulWidget {
+class CartPage extends HookConsumerWidget {
   const CartPage({Key? key}) : super(key: key);
 
   @override
-  State<CartPage> createState() => _CartPageState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    // 监听 ViewModel 状态
+    final cartState = ref.watch(cartStateProvider);
+    final cartViewModel = ref.read(cartViewModelProvider.notifier);
+    final tabViewModel = ref.read(tabViewModelProvider.notifier);
+    
+    // 切换 Tab
+    void switchToTab(String route) {
+      tabViewModel.switchToRoute(route);
+    }
 
-class _CartPageState extends State<CartPage> {
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('购物车'),
@@ -45,6 +54,111 @@ class _CartPageState extends State<CartPage> {
                 color: Colors.grey,
               ),
             ),
+            
+            // KeepAlive 测试区域
+            const SizedBox(height: 30),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.orange.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                children: [
+                  const Text(
+                    'KeepAlive 测试 - 计数器',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '当前计数: ${cartState.counter}',
+                    style: const TextStyle(fontSize: 18, color: Colors.orange),
+                  ),
+                  const SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: cartViewModel.incrementCounter,
+                    child: const Text('增加计数'),
+                  ),
+                  const Text(
+                    '切换到其他Tab再回来，计数应该保持不变',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
+              ),
+            ),
+            
+            // 购物车商品列表
+            const SizedBox(height: 30),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.blue.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        '购物车商品',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        '总计: ¥${cartState.totalAmount.toStringAsFixed(2)}',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.red),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  ...cartState.items.map((item) => Card(
+                    child: ListTile(
+                      leading: Text(item.image, style: const TextStyle(fontSize: 24)),
+                      title: Text(item.name),
+                      subtitle: Text('¥${item.price.toStringAsFixed(2)}'),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.remove),
+                            onPressed: () => cartViewModel.decrementItemQuantity(item.id),
+                          ),
+                          Text('${item.quantity}'),
+                          IconButton(
+                            icon: const Icon(Icons.add),
+                            onPressed: () => cartViewModel.incrementItemQuantity(item.id),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete),
+                            onPressed: () => cartViewModel.removeItem(item.id),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )),
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      ElevatedButton(
+                        onPressed: cartViewModel.clearCart,
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                        child: const Text('清空购物车'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('结算功能开发中...')),
+                          );
+                        },
+                        child: const Text('结算'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            
             const SizedBox(height: 30),
             ElevatedButton(
               onPressed: () {
@@ -62,15 +176,15 @@ class _CartPageState extends State<CartPage> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 ElevatedButton(
-                  onPressed: () => context.switchTab(IndexPage),
+                  onPressed: () => switchToTab('IndexPage'),
                   child: const Text('切换到首页'),
                 ),
                 ElevatedButton(
-                  onPressed: () => context.switchTab(CategoryPage),
+                  onPressed: () => switchToTab('CategoryPage'),
                   child: const Text('切换到分类'),
                 ),
                 ElevatedButton(
-                  onPressed: () => context.switchTab(MyPage),
+                  onPressed: () => switchToTab('MyPage'),
                   child: const Text('切换到我的'),
                 ),
               ],
