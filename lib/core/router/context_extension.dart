@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_demo/pages/home/indexPage.dart';
 import 'package:flutter_demo/core/router/router.dart';
 import 'package:flutter_demo/core/mvvm/tab_view_model.dart';
-import 'package:flutter_demo/core/router/RouteHelper.dart';
+import 'package:flutter_demo/core/router/route_helper.dart';
 import 'package:flutter_demo/pages/BottomMenuBarPage.dart';
 import 'package:flutter_demo/core/router/app_router.dart';
 

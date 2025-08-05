@@ -80,16 +80,30 @@ class TabState {
 class TabViewModel extends StateNotifier<TabState> {
   TabViewModel() : super(TabState.initial());
 
+  // 页面生命周期回调
+  static final Map<String, VoidCallback> _pageShowCallbacks = {};
+  static final Map<String, VoidCallback> _pageHideCallbacks = {};
+
   /// 切换到指定索引的 Tab
   void switchTab(int index) {
     if (index >= 0 && index < TabRoute.tabRoutes.length) {
       final route = TabRoute.getRouteFromIndex(index);
+      final oldRoute = state.currentRoute;
+      
+      // 触发旧页面的隐藏回调
+      if (oldRoute != route) {
+        _triggerPageHide(oldRoute);
+      }
+      
       state = state.copyWith(
         currentIndex: index,
         currentRoute: route,
         isInitialized: true,
       );
       debugPrint('TabViewModel: 切换到 Tab $index - $route');
+      
+      // 触发新页面的显示回调
+      _triggerPageShow(route);
     }
   }
 
@@ -116,6 +130,52 @@ class TabViewModel extends StateNotifier<TabState> {
       isInitialized: true,
     );
     debugPrint('TabViewModel: 初始化 Tab $index - $route');
+    
+    // 触发初始页面的显示回调
+    _triggerPageShow(route);
+  }
+
+  // 注册页面生命周期回调
+  static void registerPageCallbacks(String pageName, {
+    VoidCallback? onPageShow,
+    VoidCallback? onPageHide,
+  }) {
+    if (onPageShow != null) {
+      _pageShowCallbacks[pageName] = onPageShow;
+    }
+    if (onPageHide != null) {
+      _pageHideCallbacks[pageName] = onPageHide;
+    }
+  }
+
+  // 注销页面生命周期回调
+  static void unregisterPageCallbacks(String pageName) {
+    _pageShowCallbacks.remove(pageName);
+    _pageHideCallbacks.remove(pageName);
+  }
+
+  // 触发页面显示回调
+  void _triggerPageShow(String route) {
+    final callback = _pageShowCallbacks[route];
+    if (callback != null) {
+      print('Tab 页面显示: $route');
+      callback();
+    }
+  }
+
+  // 触发页面隐藏回调
+  void _triggerPageHide(String route) {
+    final callback = _pageHideCallbacks[route];
+    if (callback != null) {
+      print('Tab 页面隐藏: $route');
+      callback();
+    }
+  }
+
+  // 清理所有回调
+  static void clearCallbacks() {
+    _pageShowCallbacks.clear();
+    _pageHideCallbacks.clear();
   }
 }
 

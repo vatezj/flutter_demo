@@ -7,6 +7,8 @@ import 'package:flutter_demo/pages/my/myPage.dart';
 import 'package:flutter_demo/core/router/context_extension.dart';
 import 'package:flutter_demo/pages/category/category_view_model.dart';
 import 'package:flutter_demo/core/mvvm/tab_view_model.dart';
+import 'package:flutter_demo/core/mvvm/hook_lifecycle.dart';
+import 'package:flutter_demo/core/mvvm/simple_page_lifecycle.dart';
 
 class CategoryPage extends HookConsumerWidget {
   const CategoryPage({Key? key}) : super(key: key);
@@ -18,7 +20,75 @@ class CategoryPage extends HookConsumerWidget {
     final categoryViewModel = ref.read(categoryViewModelProvider.notifier);
     final tabViewModel = ref.read(tabViewModelProvider.notifier);
     
-     // 切换 Tab
+    // 页面生命周期管理（简单版）
+    EnhancedSimplePageLifecycleHook.useEnhancedSimplePageLifecycle(
+      pageName: '分类页面',
+      onResume: () {
+        print('-------------------------分类页面 onResume');
+        // 页面恢复时的逻辑
+      },
+      onInactive: () {
+        print('-------------------------分类页面 onInactive');
+        // 页面变为非活跃时的逻辑
+      },
+      onHide: () {
+        print('-------------------------分类页面 onHide');
+        // 页面隐藏时的逻辑
+      },
+      onShow: () {
+        print('-------------------------分类页面 onShow');
+        // 页面显示时的逻辑
+      },
+      onPause: () {
+        print('-------------------------分类页面 onPause');
+        // 页面暂停时的逻辑
+      },
+      onRestart: () {
+        print('-------------------------分类页面 onRestart');
+        // 页面重启时的逻辑
+      },
+      onDetach: () {
+        print('-------------------------分类页面 onDetach');
+        // 页面分离时的逻辑
+      },
+      onInit: () {
+        print('-------------------------分类页面 onInit');
+        // 页面初始化时的逻辑
+      },
+      onDispose: () {
+        print('-------------------------分类页面 onDispose');
+        // 页面销毁时的逻辑
+      },
+      onPageShow: () {
+        print('-------------------------分类页面 onPageShow (页面可见)');
+        // 页面变为可见时的逻辑
+      },
+      onPageHide: () {
+        print('-------------------------分类页面 onPageHide (页面不可见)');
+        // 页面变为不可见时的逻辑
+      },
+    );
+
+    // Tab 页面生命周期管理
+    useEffect(() {
+      // 注册 Tab 页面回调
+      TabViewModel.registerPageCallbacks('CategoryPage',
+        onPageShow: () {
+          print('-------------------------分类页面 Tab onPageShow (从其他Tab切换过来)');
+          // Tab 页面显示时的逻辑
+        },
+        onPageHide: () {
+          print('-------------------------分类页面 Tab onPageHide (切换到其他Tab)');
+          // Tab 页面隐藏时的逻辑
+        },
+      );
+      
+      return () {
+        TabViewModel.unregisterPageCallbacks('CategoryPage');
+      };
+    }, []);
+    
+    // 切换 Tab
     void switchToTab(String route) {
       tabViewModel.switchToRoute(route);
     }

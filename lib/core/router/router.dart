@@ -9,7 +9,7 @@ import 'package:flutter_demo/pages/home/info.dart';
 import 'package:flutter_demo/pages/login/loginPage.dart';
 import 'package:flutter_demo/pages/my/myPage.dart';
 import 'package:flutter_demo/pages/BottomMenuBarPage.dart';
-import 'package:flutter_demo/core/router/RouteHelper.dart';
+import 'package:flutter_demo/core/router/route_helper.dart';
 import 'package:flutter_demo/core/router/middleware.dart';
 
 const Type _HOME_ = IndexPage;

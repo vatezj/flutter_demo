@@ -8,15 +8,15 @@ lib/core/
 │   └── app_config.dart
 ├── init/             # 应用初始化
 │   └── app_init.dart
-├── provider/         # 状态管理
-│   ├── tab_provider.dart
-│   └── app_providers.dart
+├── mvvm/             # MVVM 架构核心
+│   ├── base_view_model.dart
+│   └── tab_view_model.dart
 ├── router/           # 路由管理
 │   ├── app_router.dart
 │   ├── router.dart
 │   ├── context_extension.dart
 │   ├── middleware.dart
-│   ├── RouteHelper.dart
+│   ├── route_helper.dart
 │   └── README.md
 └── network/          # 网络请求
     ├── api.dart
@@ -37,26 +37,36 @@ lib/core/
   - 中间件注册
   - 其他初始化操作
 
-### 3. 状态管理 (provider/)
-- **tab_provider.dart**: 底部导航栏状态管理
-  - 管理当前激活的tab索引
-  - 提供tab切换方法
-  - 路由名称和索引的转换
-- **app_providers.dart**: 应用级别的Provider管理器
-  - 统一管理所有Provider
-  - 提供MultiProvider配置
+### 3. MVVM 架构核心 (mvvm/)
+- **base_view_model.dart**: 基础 ViewModel 类
+  - `BaseState`: 通用状态基类（isLoading, errorMessage）
+  - `BaseRiverpodViewModel`: 基础 ViewModel 类，提供通用功能
+- **tab_view_model.dart**: 底部导航栏状态管理
+  - `TabRoute`: Tab 路由配置和工具方法
+  - `TabState`: Tab 状态类
+  - `TabViewModel`: Tab 状态管理 ViewModel
+  - Riverpod Provider 定义
 
 ### 4. 路由管理 (router/)
 - **app_router.dart**: 应用路由管理器
   - 统一的路由生成逻辑
-  - tabs页面和普通页面的区分
+  - tabs 页面和普通页面的区分
 - **router.dart**: 核心路由引擎
+  - 路由定义和注册
+  - 路由跳转方法
+  - 中间件管理
 - **context_extension.dart**: 路由扩展方法
+  - 为 BuildContext 添加路由方法
+  - 支持链式调用
 - **middleware.dart**: 中间件管理
+  - 路由拦截和权限验证
+- **route_helper.dart**: 路由助手工具
+  - 类型名称转换
+  - 路由定义辅助
 
 ### 5. 网络请求 (network/)
-- **api.dart**: API接口定义
-- **http.dart**: HTTP客户端
+- **api.dart**: API 接口定义
+- **http.dart**: HTTP 客户端
 - **interceptor.dart**: 请求拦截器
 
 ## 使用方式
@@ -64,58 +74,79 @@ lib/core/
 ### 入口文件 (main.dart)
 ```dart
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_demo/core/init/app_init.dart';
 import 'package:flutter_demo/core/router/app_router.dart';
 import 'package:flutter_demo/core/config/app_config.dart';
-import 'package:flutter_demo/core/provider/app_providers.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   AppInit.init();
-  runApp(const MyApp());
+  
+  runApp(
+    const ProviderScope(
+      child: MyApp(),
+    ),
+  );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
-    return AppProviders.getMultiProvider(
-      child: MaterialApp(
-        title: AppConfig.appName,
-        theme: AppConfig.theme,
-        initialRoute: AppConfig.initialRoute,
-        onGenerateRoute: AppRouter.onGenerateRoute,
-      ),
+  Widget build(BuildContext context, WidgetRef ref) {
+    return MaterialApp(
+      title: AppConfig.appName,
+      theme: AppConfig.lightTheme,
+      darkTheme: AppConfig.darkTheme,
+      initialRoute: AppRouter.initialRoute,
+      onGenerateRoute: AppRouter.onGenerateRoute,
     );
   }
 }
 ```
 
-### 状态管理使用
+### MVVM 状态管理使用
 ```dart
-// 在Widget中使用Consumer监听状态变化
-Consumer<TabProvider>(
-  builder: (context, tabProvider, child) {
-    return Text('当前tab: ${tabProvider.currentIndex}');
-  },
+// 在 Widget 中使用 HookConsumerWidget
+class HomePage extends HookConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // 监听状态
+    final homeState = ref.watch(homeStateProvider);
+    final homeViewModel = ref.read(homeViewModelProvider.notifier);
+    
+    // 使用 Hooks 管理本地状态
+    final localCounter = useState(0);
+    
+    return Text('计数: ${homeState.counter}');
+  }
+}
+
+// 调用 ViewModel 方法
+ElevatedButton(
+  onPressed: homeViewModel.incrementCounter,
+  child: const Text('增加计数'),
 )
-
-// 在方法中读取状态
-final tabProvider = context.read<TabProvider>();
-tabProvider.switchTab(1);
-
-// 切换tab
-context.read<TabProvider>().switchTabByRoute('CategoryPage');
 ```
 
 ### 路由跳转
 ```dart
-// 普通跳转（在tabs页面内部跳转，会显示底部导航栏）
-context.navigateTo(SomePage);
+// Tab 切换（使用 ViewModel）
+tabViewModel.switchToRoute('CategoryPage');
 
-// 跳转到非tabs页面（不显示底部导航栏）
-context.navigateToNonTab(DetailsPage);
+// 普通页面跳转
+Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (context) => const DetailsPage(),
+    settings: RouteSettings(arguments: args),
+  ),
+);
 
-// 切换到tab页面（使用Provider状态管理）
-context.switchTab(CategoryPage);
+// 带返回值的跳转
+final result = await Navigator.push<Map<String, dynamic>>(
+  context,
+  MaterialPageRoute(...),
+);
 ```
 
 ### 配置管理
@@ -124,28 +155,53 @@ context.switchTab(CategoryPage);
 String appName = AppConfig.appName;
 
 // 获取主题
-ThemeData theme = AppConfig.theme;
+ThemeData lightTheme = AppConfig.lightTheme;
+ThemeData darkTheme = AppConfig.darkTheme;
 ```
 
-## Provider 状态管理优势
+## MVVM + Riverpod + Hooks 架构优势
 
-1. **集中状态管理**: 所有tab相关状态都在 `TabProvider` 中
-2. **响应式更新**: 状态变化时自动更新UI
-3. **类型安全**: 使用Provider提供类型安全的状态访问
-4. **易于测试**: 状态逻辑与UI分离，便于单元测试
-5. **性能优化**: 只有依赖特定状态的Widget才会重建
+### 1. 状态管理优势
+- **集中状态管理**: 所有状态都在 ViewModel 中管理
+- **响应式更新**: 状态变化时自动更新 UI
+- **类型安全**: 使用 Provider 提供类型安全的状态访问
+- **易于测试**: 状态逻辑与 UI 分离，便于单元测试
+- **性能优化**: 只有依赖特定状态的 Widget 才会重建
 
-## 优化说明
+### 2. Hooks 优势
+- **简化状态管理**: 减少样板代码
+- **生命周期管理**: 自动处理 Widget 生命周期
+- **性能优化**: 提供记忆化和缓存功能
+- **代码复用**: 逻辑可以在不同 Widget 间复用
 
-### 路由名称获取优化
-- 使用 `RouteHelper.typeName()` 自动获取路由名称
-- 无需手动定义每个路由的映射关系
-- 支持任何页面类型，自动处理路由名称转换
+### 3. 路由系统优势
+- **类型安全**: 使用类型而不是字符串进行路由
+- **中间件支持**: 支持权限验证等拦截功能
+- **参数传递**: 类型安全的参数传递
+- **返回值处理**: 支持页面间数据传递
 
-### 状态管理优势
+## 最佳实践
 
-1. **集中状态管理**: 所有tab相关状态都在 `TabProvider` 中
-2. **响应式更新**: 状态变化时自动更新UI
-3. **类型安全**: 使用Provider提供类型安全的状态访问
-4. **易于测试**: 状态逻辑与UI分离，便于单元测试
-5. **性能优化**: 只有依赖特定状态的Widget才会重建 
+### 1. ViewModel 设计
+- 继承 `BaseRiverpodViewModel` 获得通用功能
+- 使用 `copyWith` 方法更新状态
+- 实现 `==` 和 `hashCode` 方法
+- 提供清晰的业务方法
+
+### 2. 状态管理
+- 使用 `ref.watch()` 监听状态变化
+- 使用 `ref.read()` 调用方法
+- 在 `useEffect` 中使用 `Future.microtask()` 避免构建时修改状态
+- 使用 `useMemoized()` 缓存计算结果
+
+### 3. 路由管理
+- 使用 `TabRoute.isTabRoute()` 判断是否为 Tab 页面
+- 普通页面使用 `Navigator.push()`
+- 参数传递使用 `RouteSettings.arguments`
+- 使用 `RouteHelper.typeName()` 获取类型名称
+
+### 4. 错误处理
+- 在 ViewModel 中使用 `setError()` 设置错误状态
+- 在 UI 中显示错误信息
+- 使用 `clearError()` 清除错误状态
+- 使用 `safeAsync()` 包装异步操作 

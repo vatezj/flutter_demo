@@ -7,6 +7,8 @@ import 'package:flutter_demo/pages/my/myPage.dart';
 import 'package:flutter_demo/core/router/context_extension.dart';
 import 'package:flutter_demo/pages/cart/cart_view_model.dart';
 import 'package:flutter_demo/core/mvvm/tab_view_model.dart';
+import 'package:flutter_demo/core/mvvm/hook_lifecycle.dart';
+import 'package:flutter_demo/core/mvvm/simple_page_lifecycle.dart';
 
 class CartPage extends HookConsumerWidget {
   const CartPage({Key? key}) : super(key: key);
@@ -17,6 +19,74 @@ class CartPage extends HookConsumerWidget {
     final cartState = ref.watch(cartStateProvider);
     final cartViewModel = ref.read(cartViewModelProvider.notifier);
     final tabViewModel = ref.read(tabViewModelProvider.notifier);
+    
+    // 页面生命周期管理（简单版）
+    EnhancedSimplePageLifecycleHook.useEnhancedSimplePageLifecycle(
+      pageName: '购物车页面',
+      onResume: () {
+        print('-------------------------购物车页面 onResume');
+        // 页面恢复时的逻辑
+      },
+      onInactive: () {
+        print('-------------------------购物车页面 onInactive');
+        // 页面变为非活跃时的逻辑
+      },
+      onHide: () {
+        print('-------------------------购物车页面 onHide');
+        // 页面隐藏时的逻辑
+      },
+      onShow: () {
+        print('-------------------------购物车页面 onShow');
+        // 页面显示时的逻辑
+      },
+      onPause: () {
+        print('-------------------------购物车页面 onPause');
+        // 页面暂停时的逻辑
+      },
+      onRestart: () {
+        print('-------------------------购物车页面 onRestart');
+        // 页面重启时的逻辑
+      },
+      onDetach: () {
+        print('-------------------------购物车页面 onDetach');
+        // 页面分离时的逻辑
+      },
+      onInit: () {
+        print('-------------------------购物车页面 onInit');
+        // 页面初始化时的逻辑
+      },
+      onDispose: () {
+        print('-------------------------购物车页面 onDispose');
+        // 页面销毁时的逻辑
+      },
+      onPageShow: () {
+        print('-------------------------购物车页面 onPageShow (页面可见)');
+        // 页面变为可见时的逻辑
+      },
+      onPageHide: () {
+        print('-------------------------购物车页面 onPageHide (页面不可见)');
+        // 页面变为不可见时的逻辑
+      },
+    );
+
+    // Tab 页面生命周期管理
+    useEffect(() {
+      // 注册 Tab 页面回调
+      TabViewModel.registerPageCallbacks('CartPage',
+        onPageShow: () {
+          print('-------------------------购物车页面 Tab onPageShow (从其他Tab切换过来)');
+          // Tab 页面显示时的逻辑
+        },
+        onPageHide: () {
+          print('-------------------------购物车页面 Tab onPageHide (切换到其他Tab)');
+          // Tab 页面隐藏时的逻辑
+        },
+      );
+      
+      return () {
+        TabViewModel.unregisterPageCallbacks('CartPage');
+      };
+    }, []);
     
     // 切换 Tab
     void switchToTab(String route) {

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_demo/core/router/router.dart';
 import 'package:flutter_demo/core/router/context_extension.dart';
 import 'package:flutter_demo/pages/home/info.dart';
@@ -27,47 +29,44 @@ class PageResult {
   });
 }
 
-class DetailsPage extends StatefulWidget with RouterBridge<DetailsPageArgs> {
+class DetailsPage extends HookConsumerWidget {
   const DetailsPage({super.key});
 
   @override
-  State<DetailsPage> createState() => _DetailsPageState();
-}
-
-class _DetailsPageState extends State<DetailsPage> {
-  DetailsPageArgs? _args;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
+  Widget build(BuildContext context, WidgetRef ref) {
+    // 使用 Hooks 管理状态
+    final args = useState<DetailsPageArgs?>(null);
+    
     // 获取路由参数
-    _args = widget.argumentOf(context);
-    if (_args != null) {
-      print('DetailsPage 接收到的参数: ${_args!.id}');
-      print('DetailsPage 接收到的参数: ${_args!.name}');
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
+    useEffect(() {
+      Future.microtask(() {
+        final routeSettings = ModalRoute.of(context)?.settings;
+        if (routeSettings?.arguments != null) {
+          args.value = routeSettings!.arguments as DetailsPageArgs;
+          print('DetailsPage 接收到的参11数123: ${args.value!.id}');
+          print('DetailsPage 接收到的参数456: ${args.value!.name}');
+        }
+      });
+      return null;
+    }, []);
     return Scaffold(
-      appBar: AppBar(title: Text('详情页面')),
+      appBar: AppBar(title: const Text('详情页面')),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('接收到的ID: ${_args?.id ?? '无'}'),
-            Text('接收到的名称: ${_args?.name ?? '无'}'),
+            Text('接收到的ID: ${args.value?.id ?? '无'}'),
+            Text('接收到的名称: ${args.value?.name ?? '无'}'),
             ElevatedButton(
               onPressed: () {
                 // 返回成功结果
                 context.navigateBack<Map<String, dynamic>>({
                   'status': 'success',
                   'message': '操作成功',
-                  'data': _args?.toJson(),
+                  'data': args.value?.toJson(),
                 });
               },
-              child: Text('确认并返回'),
+              child: const Text('确认并返回'),
             ),
             ElevatedButton(
               onPressed: () {
@@ -78,7 +77,7 @@ class _DetailsPageState extends State<DetailsPage> {
                   'data': null,
                 });
               },
-              child: Text('取消并返回'),
+              child: const Text('取消并返回'),
             ),
 
 
@@ -89,7 +88,7 @@ class _DetailsPageState extends State<DetailsPage> {
                   MaterialPageRoute(
                     builder: (context) => const InfoPage(),
                     settings: RouteSettings(
-                      arguments: DetailsPageArgs(id: (_args?.id ?? 0) + 1, name: '${_args?.name ?? ''} - 详情'),
+                      arguments: DetailsPageArgs(id: (args.value?.id ?? 0) + 1, name: '${args.value?.name ?? ''} - 详情'),
                     ),
                   ),
                 );

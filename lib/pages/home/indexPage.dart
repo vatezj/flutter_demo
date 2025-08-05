@@ -4,13 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_demo/pages/home/details.dart';
-import 'package:flutter_demo/pages/my/myPage.dart';
-import 'package:flutter_demo/pages/category/categoryPage.dart';
-import 'package:flutter_demo/pages/cart/cartPage.dart';
-import 'package:flutter_demo/core/router/router.dart';
+
 import 'package:flutter_demo/core/router/context_extension.dart';
 import 'package:flutter_demo/pages/home/home_view_model.dart';
 import 'package:flutter_demo/core/mvvm/tab_view_model.dart';
+import 'package:flutter_demo/core/mvvm/hook_lifecycle.dart';
+import 'package:flutter_demo/core/mvvm/simple_page_lifecycle.dart';
 
 class IndexPage extends HookConsumerWidget {
   const IndexPage({Key? key}) : super(key: key);
@@ -27,6 +26,74 @@ class IndexPage extends HookConsumerWidget {
     final homeViewModel = ref.read(homeViewModelProvider.notifier);
     final tabViewModel = ref.read(tabViewModelProvider.notifier);
 
+    // 页面生命周期管理（简单版）
+    EnhancedSimplePageLifecycleHook.useEnhancedSimplePageLifecycle(
+      pageName: '首页',
+      onResume: () {
+        print('-------------------------首页 onResume');
+        // 页面恢复时的逻辑
+      },
+      onInactive: () {
+        print('-------------------------首页 onInactive');
+        // 页面变为非活跃时的逻辑
+      },
+      onHide: () {
+        print('-------------------------首页 onHide');
+        // 页面隐藏时的逻辑
+      },
+      onShow: () {
+        print('-------------------------首页 onShow');
+        // 页面显示时的逻辑
+      },
+      onPause: () {
+        print('-------------------------首页 onPause');
+        // 页面暂停时的逻辑
+      },
+      onRestart: () {
+        print('-------------------------首页 onRestart');
+        // 页面重启时的逻辑
+      },
+      onDetach: () {
+        print('-------------------------首页 onDetach');
+        // 页面分离时的逻辑
+      },
+      onInit: () {
+        print('-------------------------首页 onInit');
+        // 页面初始化时的逻辑
+      },
+      onDispose: () {
+        print('-------------------------首页 onDispose');
+        // 页面销毁时的逻辑
+      },
+      onPageShow: () {
+        print('-------------------------首页 onPageShow (页面可见)');
+        // 页面变为可见时的逻辑
+      },
+      onPageHide: () {
+        print('-------------------------首页 onPageHide (页面不可见)');
+        // 页面变为不可见时的逻辑
+      },
+    );
+
+    // Tab 页面生命周期管理
+    useEffect(() {
+      // 注册 Tab 页面回调
+      TabViewModel.registerPageCallbacks('IndexPage',
+        onPageShow: () {
+          print('-------------------------首页 Tab onPageShow (从其他Tab切换过来)');
+          // Tab 页面显示时的逻辑
+        },
+        onPageHide: () {
+          print('-------------------------首页 Tab onPageHide (切换到其他Tab)');
+          // Tab 页面隐藏时的逻辑
+        },
+      );
+      
+      return () {
+        TabViewModel.unregisterPageCallbacks('IndexPage');
+      };
+    }, []);
+
     // 获取路由参数
     useEffect(() {
       Future.microtask(() {
@@ -42,12 +109,11 @@ class IndexPage extends HookConsumerWidget {
     // 导航并等待结果
     Future<void> navigateAndWaitResult() async {
       try {
-          final result = await context.navigateToNonTab(
-            DetailsPage,
-            arguments: DetailsPageArgs(id: Random().nextInt(100), name: '测试'),
-          );
-          print('返回结果: $result');
-  
+        final result = await context.navigateToNonTab(
+          DetailsPage,
+          arguments: DetailsPageArgs(id: Random().nextInt(100), name: '测试'),
+        );
+        print('返回结果: $result');
       } catch (e) {
         print('发生错误: $e');
       }
@@ -113,15 +179,6 @@ class IndexPage extends HookConsumerWidget {
               context.navigateToNonTab(DetailsPage,
                   arguments:
                       DetailsPageArgs(id: Random().nextInt(100), name: '测试'));
-              // Navigator.push(
-              //   context,
-              //   MaterialPageRoute(
-              //     builder: (context) => const DetailsPage(),
-              //     settings: RouteSettings(
-              //       arguments: DetailsPageArgs(id: Random().nextInt(100), name: '测试'),
-              //     ),
-              //   ),
-              // );
             },
             child: const Text('普通跳转'),
           ),

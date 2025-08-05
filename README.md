@@ -1,232 +1,332 @@
-# Flutter 路由系统
+# Flutter Demo - MVVM + Riverpod + Hooks 架构
 
-一个优雅的 Flutter 路由系统，支持参数传递、返回值处理、中间件拦截等功能。
+## 🏗️ 项目架构
 
-## 功能特点
+本项目采用现代化的 Flutter 架构模式：
 
-- 类型安全的路由参数传递
-- 支持页面返回值处理
-- 中间件系统（支持权限验证等）
-- 路由白名单
-- 页面栈管理
-- 支持多种导航方式（push、replace、reLaunch）
+- **MVVM (Model-View-ViewModel)**: 分离业务逻辑和 UI 层
+- **Riverpod**: 响应式状态管理
+- **Flutter Hooks**: 简化状态管理和生命周期
+- **KeepAlive**: 页面状态保持
 
-## 基本使用
+## 📁 项目结构
 
-### 1. 页面定义
+```
+lib/
+├── core/                    # 核心模块
+│   ├── config/             # 配置管理
+│   │   └── app_config.dart
+│   ├── init/               # 应用初始化
+│   │   └── app_init.dart
+│   ├── mvvm/               # MVVM 架构核心
+│   │   ├── base_view_model.dart
+│   │   └── tab_view_model.dart
+│   ├── network/            # 网络请求
+│   │   ├── api.dart
+│   │   ├── http.dart
+│   │   └── interceptor.dart
+│   └── router/             # 路由管理
+│       ├── app_router.dart
+│       ├── context_extension.dart
+│       ├── middleware.dart
+│       ├── route_helper.dart
+│       └── router.dart
+├── l10n/                   # 国际化
+│   ├── app_en.arb
+│   ├── app_zh.arb
+│   └── gen/
+├── pages/                  # 页面模块
+│   ├── BottomMenuBarPage.dart
+│   ├── home/               # 首页模块
+│   │   ├── indexPage.dart
+│   │   ├── details.dart
+│   │   ├── info.dart
+│   │   └── home_view_model.dart
+│   ├── category/           # 分类模块
+│   │   ├── categoryPage.dart
+│   │   └── category_view_model.dart
+│   ├── cart/               # 购物车模块
+│   │   ├── cartPage.dart
+│   │   └── cart_view_model.dart
+│   ├── my/                 # 我的模块
+│   │   ├── myPage.dart
+│   │   └── my_view_model.dart
+│   └── login/              # 登录模块
+│       └── loginPage.dart
+└── main.dart               # 应用入口
+```
+
+## 🚀 快速开始
+
+### 环境要求
+
+- Flutter 3.0.0+
+- Dart 3.0.0+
+
+### 安装依赖
+
+```bash
+flutter pub get
+```
+
+### 运行应用
+
+```bash
+flutter run
+```
+
+## 🏛️ 架构详解
+
+### 1. MVVM 架构
+
+#### BaseViewModel
+```dart
+abstract class BaseRiverpodViewModel extends StateNotifier<BaseState> {
+  // 通用 ViewModel 功能
+  void setLoading(bool loading);
+  void setError(String? error);
+  void clearError();
+  Future<void> safeAsync(Future<void> Function() action);
+}
+```
+
+#### 页面 ViewModel 示例
+```dart
+class HomeViewModel extends StateNotifier<HomeState> {
+  HomeViewModel() : super(HomeState.initial());
+
+  void incrementCounter() {
+    state = state.copyWith(counter: state.counter + 1);
+  }
+}
+```
+
+### 2. Riverpod 状态管理
+
+#### Provider 定义
+```dart
+// ViewModel Provider
+final homeViewModelProvider = StateNotifierProvider<HomeViewModel, HomeState>((ref) {
+  return HomeViewModel();
+});
+
+// 状态 Provider
+final homeStateProvider = Provider<HomeState>((ref) {
+  return ref.watch(homeViewModelProvider);
+});
+```
+
+#### 在 Widget 中使用
+```dart
+class HomePage extends HookConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final homeState = ref.watch(homeStateProvider);
+    final homeViewModel = ref.read(homeViewModelProvider.notifier);
+    
+    return Text('计数: ${homeState.counter}');
+  }
+}
+```
+
+### 3. Flutter Hooks
+
+#### 状态管理
+```dart
+// 本地状态
+final counter = useState(0);
+final isLoading = useState(false);
+
+// 副作用
+useEffect(() {
+  // 初始化逻辑
+  return () {
+    // 清理逻辑
+  };
+}, []);
+
+// 记忆化
+final expensiveValue = useMemoized(() {
+  return expensiveCalculation();
+}, [dependencies]);
+```
+
+#### 生命周期管理
+```dart
+// 页面控制器
+final pageController = usePageController();
+
+// 动画控制器
+final animationController = useAnimationController(
+  duration: const Duration(milliseconds: 300),
+);
+```
+
+## 📱 页面功能
+
+### 1. 底部导航栏
+
+- **首页**: 计数器测试、页面跳转
+- **分类**: 分类列表管理
+- **购物车**: 商品管理、数量调整
+- **我的**: 用户信息、登录状态
+
+### 2. KeepAlive 功能
+
+所有 Tab 页面都包装在 `KeepAliveWrapper` 中，切换页面时状态保持：
 
 ```dart
-// 定义页面参数类
-class PageArgs {
-  final int id;
-  final String name;
-
-  PageArgs({this.id = 0, this.name = ''});
-
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-  };
+class KeepAliveWrapper extends StatefulWidget {
+  @override
+  State<KeepAliveWrapper> createState() => _KeepAliveWrapperState();
 }
 
-// 页面类
-class MyPage extends StatefulWidget with RouterBridge<PageArgs> {
+class _KeepAliveWrapperState extends State<KeepAliveWrapper>
+    with AutomaticKeepAliveClientMixin {
   @override
-  State<MyPage> createState() => _MyPageState();
+  bool get wantKeepAlive => true;
 }
+```
 
-class _MyPageState extends State<MyPage> {
-  PageArgs? _args;
+### 3. 路由系统
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // 获取路由参数
-    _args = widget.argumentOf(context);
+#### 路由配置
+```dart
+class AppRouter {
+  static const String initialRoute = 'BottomMenuBarPage';
+  
+  static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
+    // 路由生成逻辑
   }
+}
+```
 
+#### 页面跳转
+```dart
+// Tab 切换
+tabViewModel.switchToRoute('CategoryPage');
+
+// 普通页面跳转
+Navigator.push(context, MaterialPageRoute(...));
+
+// 带参数跳转
+Navigator.push(context, MaterialPageRoute(
+  builder: (context) => const DetailsPage(),
+  settings: RouteSettings(arguments: args),
+));
+```
+
+## 🛠️ 开发指南
+
+### 1. 创建新页面
+
+1. **创建 ViewModel**:
+```dart
+class NewPageViewModel extends StateNotifier<NewPageState> {
+  NewPageViewModel() : super(NewPageState.initial());
+  
+  void someAction() {
+    // 业务逻辑
+  }
+}
+```
+
+2. **创建 Provider**:
+```dart
+final newPageViewModelProvider = StateNotifierProvider<NewPageViewModel, NewPageState>((ref) {
+  return NewPageViewModel();
+});
+```
+
+3. **创建页面**:
+```dart
+class NewPage extends HookConsumerWidget {
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(newPageStateProvider);
+    final viewModel = ref.read(newPageViewModelProvider.notifier);
+    
     return Scaffold(
-      appBar: AppBar(title: Text('我的页面')),
-      body: Center(
-        child: Column(
-          children: [
-            Text('接收到的ID: ${_args?.id ?? '无'}'),
-            Text('接收到的名称: ${_args?.name ?? '无'}'),
-            ElevatedButton(
-              onPressed: () {
-                // 返回结果
-                context.navigateBack<Map<String, dynamic>>({
-                  'status': 'success',
-                  'message': '操作成功',
-                  'data': _args?.toJson(),
-                });
-              },
-              child: Text('确认并返回'),
-            ),
-          ],
-        ),
-      ),
+      // UI 实现
     );
   }
 }
 ```
 
-### 2. 路由注册
+### 2. 状态管理最佳实践
 
-```dart
-void main() {
-  // 注册路由
-  MyRouter.ROUTES.addAll({
-    '/login': (_) => LoginPage(),
-    '/home': (_) => HomePage(),
-    '/my': (_) => MyPage(),
-  });
+- 使用 `ref.watch()` 监听状态变化
+- 使用 `ref.read()` 调用方法
+- 在 `useEffect` 中使用 `Future.microtask()` 避免构建时修改状态
+- 使用 `useMemoized()` 缓存计算结果
 
-  // 注册中间件
-  MyRouter.middlewareManager.register(AuthMiddleware());
+### 3. 路由管理
 
-  runApp(const MyApp());
-}
+- Tab 页面使用 `TabRoute.isTabRoute()` 判断
+- 普通页面使用 `Navigator.push()`
+- 参数传递使用 `RouteSettings.arguments`
+
+## 📦 依赖管理
+
+### 主要依赖
+
+```yaml
+dependencies:
+  flutter_riverpod: ^2.5.1      # 状态管理
+  riverpod_annotation: ^2.3.5   # 代码生成注解
+  flutter_hooks: ^0.20.5        # Hooks
+  hooks_riverpod: ^2.5.1        # Hooks + Riverpod 集成
+  dio: ^5.4.3                   # 网络请求
+  shared_preferences: ^2.3.3    # 本地存储
 ```
 
-### 3. 导航方法
+### 开发依赖
 
-```dart
-// 1. 普通导航
-context.navigateTo(
-  MyPage,
-  arguments: PageArgs(id: 1, name: '测试'),
-);
-
-// 2. 导航并等待结果
-final result = await context.navigateTo<Map<String, dynamic>>(
-  MyPage,
-  arguments: PageArgs(id: 1, name: '测试'),
-);
-
-if (result != null) {
-  print('返回状态: ${result['status']}');
-  print('返回消息: ${result['message']}');
-  if (result['data'] != null) {
-    print('返回数据: ${result['data']}');
-  }
-}
-
-// 3. 重定向（替换当前页面）
-context.redirectTo<Map<String, dynamic>, void>(
-  MyPage,
-  arguments: PageArgs(id: 1, name: '测试'),
-);
-
-// 4. 重新启动（清除所有页面）
-context.reLaunch(
-  MyPage,
-  arguments: PageArgs(id: 1, name: '测试'),
-);
-
-// 5. 返回上一页
-context.navigateBack();
-
-// 6. 返回上一页并传递结果
-context.navigateBack<Map<String, dynamic>>({
-  'status': 'success',
-  'message': '操作成功',
-  'data': {'id': 1, 'name': '测试'},
-});
+```yaml
+dev_dependencies:
+  riverpod_generator: ^2.4.0    # 代码生成
+  build_runner: ^2.4.13         # 构建工具
 ```
 
-### 4. 中间件使用
+## 🔧 构建和部署
 
-```dart
-// 1. 创建中间件
-class AuthMiddleware extends RouteMiddleware {
-  @override
-  int get priority => 100;
-
-  @override
-  Future<bool> handle(BuildContext context, RouteSettings settings) async {
-    // 检查是否在白名单中
-    if (_isInWhitelist(settings)) {
-      return true;
-    }
-
-    // 权限验证
-    final bool isAuthenticated = await _checkAuth();
-    if (!isAuthenticated) {
-      context.navigateTo(LoginPage);
-      return false;
-    }
-    return true;
-  }
-
-  // 白名单检查
-  bool _isInWhitelist(RouteSettings settings) {
-    return _whitelist.contains(settings.name) ||
-           _whitelistTypes.contains(settings.arguments as Type);
-  }
-}
-
-// 2. 注册中间件
-MyRouter.middlewareManager.register(AuthMiddleware());
+### 开发模式
+```bash
+flutter run --debug
 ```
 
-### 5. 页面栈管理
+### 生产构建
+```bash
+# Android
+flutter build apk --release
 
-```dart
-// 1. 获取页面栈
-final stack = MyRouter.getRouteStack(context);
+# iOS
+flutter build ios --release
 
-// 2. 打印页面栈信息
-MyRouter.printRouteStack(context);
-// 输出示例：
-// 当前页面栈信息：
-// [0] IndexPage (首页)
-// [1] MyPage (当前)
-//     参数: {id: 1, name: 测试}
+# Web
+flutter build web --release
 ```
 
-## 最佳实践
+## 🧪 测试
 
-1. 参数传递：
-   - 使用专门的参数类，而不是直接传递 Map
-   - 实现 toJson 方法，方便序列化
-   - 使用泛型确保类型安全
+### 单元测试
+```bash
+flutter test
+```
 
-2. 返回值处理：
-   - 使用 Map 作为返回值，包含状态、消息和数据
-   - 在接收方进行类型转换和空值处理
-   - 使用泛型指定返回值类型
+### 集成测试
+```bash
+flutter test integration_test/
+```
 
-3. 中间件使用：
-   - 合理设置中间件优先级
-   - 使用白名单避免循环跳转
-   - 在中间件中处理全局逻辑
+## 📄 许可证
 
-4. 页面栈管理：
-   - 在关键操作前检查页面栈
-   - 使用打印方法调试导航问题
-   - 注意页面栈的清理时机
+MIT License
 
-## 注意事项
+## 🤝 贡献
 
-1. 路由名称：
-   - 使用 RouteHelper.typeName 获取类型名称
-   - 确保路由名称唯一
-   - 避免使用硬编码的路由名称
+欢迎提交 Issue 和 Pull Request！
 
-2. 参数传递：
-   - 参数类应该是不可变的
-   - 提供默认值处理空值情况
-   - 注意参数的类型安全
+---
 
-3. 中间件：
-   - 中间件应该是无状态的
-   - 避免在中间件中执行耗时操作
-   - 合理使用白名单机制
-
-4. 页面栈：
-   - 注意页面栈的深度
-   - 及时清理不需要的页面
-   - 避免页面栈过深导致性能问题
+**注意**: 本项目采用现代化的 Flutter 架构，确保您使用的 Flutter 版本支持所有功能。
