@@ -10,6 +10,7 @@ import 'package:flutter_demo/pages/home/home_view_model.dart';
 import 'package:flutter_demo/core/mvvm/tab_view_model.dart';
 import 'package:flutter_demo/core/mvvm/hook_lifecycle.dart';
 import 'package:flutter_demo/core/mvvm/simple_page_lifecycle.dart';
+import 'package:flutter_demo/core/mvvm/route_aware_lifecycle.dart';
 
 class IndexPage extends HookConsumerWidget {
   const IndexPage({Key? key}) : super(key: key);
@@ -26,8 +27,8 @@ class IndexPage extends HookConsumerWidget {
     final homeViewModel = ref.read(homeViewModelProvider.notifier);
     final tabViewModel = ref.read(tabViewModelProvider.notifier);
 
-    // 页面生命周期管理（简单版）
-    EnhancedSimplePageLifecycleHook.useEnhancedSimplePageLifecycle(
+    // 页面生命周期管理（RouteAware 版）
+    EnhancedRouteAwareLifecycleHook.useEnhancedRouteAwareLifecycle(
       pageName: '首页',
       onResume: () {
         print('-------------------------首页 onResume');

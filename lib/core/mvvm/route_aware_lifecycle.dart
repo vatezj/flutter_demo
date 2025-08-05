@@ -5,16 +5,16 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 /// 基于 RouteAware 的页面生命周期管理
 class RouteAwareLifecycle extends StatefulWidget {
   final Widget child;
-  final VoidCallback? onShow;
-  final VoidCallback? onHide;
+  final VoidCallback? onPageShow;
+  final VoidCallback? onPageHide;
   final RouteObserver<ModalRoute<dynamic>> routeObserver;
 
   const RouteAwareLifecycle({
     super.key,
     required this.child,
     required this.routeObserver,
-    this.onShow,
-    this.onHide,
+    this.onPageShow,
+    this.onPageHide,
   });
 
   @override
@@ -46,28 +46,28 @@ class _RouteAwareLifecycleState extends State<RouteAwareLifecycle> with RouteAwa
   void didPush() {
     super.didPush();
     print('${widget.runtimeType} - didPush (页面推入)');
-    widget.onShow?.call();
+    widget.onPageShow?.call();
   }
 
   @override
   void didPopNext() {
     super.didPopNext();
     print('${widget.runtimeType} - didPopNext (页面重新可见)');
-    widget.onShow?.call();
+    widget.onPageShow?.call();
   }
 
   @override
   void didPop() {
     super.didPop();
     print('${widget.runtimeType} - didPop (页面弹出)');
-    widget.onHide?.call();
+    widget.onPageHide?.call();
   }
 
   @override
   void didPushNext() {
     super.didPushNext();
     print('${widget.runtimeType} - didPushNext (页面被覆盖)');
-    widget.onHide?.call();
+    widget.onPageHide?.call();
   }
 
   @override
@@ -76,82 +76,101 @@ class _RouteAwareLifecycleState extends State<RouteAwareLifecycle> with RouteAwa
   }
 }
 
-/// Hook 版本的 RouteAware 生命周期管理
-void useRouteAwareLifecycle({
-  VoidCallback? onShow,
-  VoidCallback? onHide,
-  RouteObserver<ModalRoute<dynamic>>? routeObserver,
-}) {
-  final context = useContext();
-  
-  useEffect(() {
-    final route = ModalRoute.of(context);
-    final observer = routeObserver ?? Navigator.of(context).widget.observers.firstWhere(
-      (observer) => observer is RouteObserver<ModalRoute<dynamic>>,
-      orElse: () => RouteObserver<ModalRoute<dynamic>>(),
-    ) as RouteObserver<ModalRoute<dynamic>>;
+/// 全局路由观察者
+final globalRouteObserver = RouteObserver<ModalRoute<dynamic>>();
+
+/// 页面生命周期管理 Hook
+class RouteAwareLifecycleHook {
+  static void useRouteAwareLifecycle({
+    required String pageName,
+    VoidCallback? onPageShow,
+    VoidCallback? onPageHide,
+    VoidCallback? onInit,
+    VoidCallback? onDispose,
+  }) {
+    final context = useContext();
+    final mounted = useIsMounted();
     
-    if (route != null) {
-      final routeAwareObserver = _RouteAwareObserver(
-        context: context,
-        onShow: onShow,
-        onHide: onHide,
-      );
-      
-      observer.subscribe(routeAwareObserver, route);
+    // 页面初始化
+    useEffect(() {
+      print('$pageName - 页面初始化');
+      onInit?.call();
       
       return () {
-        observer.unsubscribe(routeAwareObserver);
+        print('$pageName - 页面销毁');
+        onDispose?.call();
       };
-    }
-    return null;
-  }, []);
+    }, []);
+
+    // 使用 RouteAware 监听路由变化
+    useEffect(() {
+      final route = ModalRoute.of(context);
+      if (route != null) {
+        final observer = _RouteAwareObserver(
+          context: context,
+          pageName: pageName,
+          onPageShow: onPageShow,
+          onPageHide: onPageHide,
+        );
+        
+        globalRouteObserver.subscribe(observer, route);
+        
+        return () {
+          globalRouteObserver.unsubscribe(observer);
+        };
+      }
+      return null;
+    }, []);
+  }
 }
 
 /// 内部 RouteAware 观察者
 class _RouteAwareObserver extends RouteAware {
   final BuildContext context;
-  final VoidCallback? onShow;
-  final VoidCallback? onHide;
+  final String pageName;
+  final VoidCallback? onPageShow;
+  final VoidCallback? onPageHide;
 
   _RouteAwareObserver({
     required this.context,
-    this.onShow,
-    this.onHide,
+    required this.pageName,
+    this.onPageShow,
+    this.onPageHide,
   });
 
   @override
   void didPush() {
     super.didPush();
-    print('${context.widget.runtimeType} - didPush (页面推入)');
-    onShow?.call();
+    print('$pageName - didPush (页面推入)');
+    onPageShow?.call();
   }
 
   @override
   void didPopNext() {
     super.didPopNext();
-    print('${context.widget.runtimeType} - didPopNext (页面重新可见)');
-    onShow?.call();
+    print('$pageName - didPopNext (页面重新可见)');
+    onPageShow?.call();
   }
 
   @override
   void didPop() {
     super.didPop();
-    print('${context.widget.runtimeType} - didPop (页面弹出)');
-    onHide?.call();
+    print('$pageName - didPop (页面弹出)');
+    onPageHide?.call();
   }
 
   @override
   void didPushNext() {
     super.didPushNext();
-    print('${context.widget.runtimeType} - didPushNext (页面被覆盖)');
-    onHide?.call();
+    print('$pageName - didPushNext (页面被覆盖)');
+    onPageHide?.call();
   }
 }
 
-/// 增强版生命周期管理 Hook
-class EnhancedLifecycleHook {
-  static void useEnhancedPageLifecycle({
+/// 增强版页面生命周期 Hook
+class EnhancedRouteAwareLifecycleHook {
+  static void useEnhancedRouteAwareLifecycle({
+    required String pageName,
     VoidCallback? onResume,
     VoidCallback? onInactive,
     VoidCallback? onHide,
@@ -169,14 +188,13 @@ class EnhancedLifecycleHook {
     
     // 应用生命周期管理
     useEffect(() {
-      print('${context.widget.runtimeType} - useEnhancedLifecycle init');
+      print('$pageName - useEnhancedRouteAwareLifecycle init');
       onInit?.call();
       onShow?.call();
-      onPageShow?.call();
       
       return () {
         if (mounted()) {
-          print('${context.widget.runtimeType} - useEnhancedLifecycle dispose');
+          print('$pageName - useEnhancedRouteAwareLifecycle dispose');
           onDispose?.call();
         }
       };
@@ -204,10 +222,11 @@ class EnhancedLifecycleHook {
       };
     }, []);
 
-    // 页面级别的可见性检测
-    useRouteAwareLifecycle(
-      onShow: onPageShow,
-      onHide: onPageHide,
+    // RouteAware 页面生命周期监听
+    RouteAwareLifecycleHook.useRouteAwareLifecycle(
+      pageName: pageName,
+      onPageShow: onPageShow,
+      onPageHide: onPageHide,
     );
   }
 }
