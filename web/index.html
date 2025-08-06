@@ -31,8 +31,27 @@
 
   <title>flutter_demo</title>
   <link rel="manifest" href="manifest.json">
+  
+  <!-- Flutter Web 配置 -->
+  <script>
+    // 使用稳定的 Flutter Web 初始化方式
+    window.addEventListener('load', function(ev) {
+      _flutter.loader.loadEntrypoint({
+        serviceWorker: {
+          serviceWorkerVersion: null,
+        },
+        onEntrypointLoaded: function(engineInitializer) {
+          engineInitializer.initializeEngine({
+            renderer: "html"
+          }).then(function(appRunner) {
+            appRunner.runApp();
+          });
+        }
+      });
+    });
+  </script>
 </head>
 <body>
-  <script src="flutter_bootstrap.js" async></script>
+  <script src="flutter.js" defer></script>
 </body>
 </html>

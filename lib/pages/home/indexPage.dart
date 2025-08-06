@@ -4,13 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_demo/pages/home/details.dart';
+import 'package:flutter_demo/pages/home/test_page.dart';
 
 import 'package:flutter_demo/core/router/context_extension.dart';
 import 'package:flutter_demo/pages/home/home_view_model.dart';
 import 'package:flutter_demo/core/mvvm/tab_view_model.dart';
-import 'package:flutter_demo/core/mvvm/hook_lifecycle.dart';
-import 'package:flutter_demo/core/mvvm/simple_page_lifecycle.dart';
-import 'package:flutter_demo/core/mvvm/route_aware_lifecycle.dart';
+import 'package:flutter_demo/core/mvvm/direct_lifecycle.dart';
 
 class IndexPage extends HookConsumerWidget {
   const IndexPage({Key? key}) : super(key: key);
@@ -27,8 +26,8 @@ class IndexPage extends HookConsumerWidget {
     final homeViewModel = ref.read(homeViewModelProvider.notifier);
     final tabViewModel = ref.read(tabViewModelProvider.notifier);
 
-    // 页面生命周期管理（RouteAware 版）
-    EnhancedRouteAwareLifecycleHook.useEnhancedRouteAwareLifecycle(
+    // 直接生命周期管理
+    DirectLifecycleHook.useDirectLifecycle(
       pageName: '首页',
       onResume: () {
         print('-------------------------首页 onResume');
@@ -182,6 +181,28 @@ class IndexPage extends HookConsumerWidget {
                       DetailsPageArgs(id: Random().nextInt(100), name: '测试'));
             },
             child: const Text('普通跳转'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              // 使用 Navigator.push 跳转，测试 onPageShow 触发
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const DetailsPage(),
+                  settings: RouteSettings(
+                    arguments: DetailsPageArgs(id: Random().nextInt(100), name: '测试'),
+                  ),
+                ),
+              );
+            },
+            child: const Text('测试 onPageShow 跳转'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              // 跳转到测试页面
+              context.navigateToNonTab(TestPage);
+            },
+            child: const Text('跳转到测试页面'),
           ),
           const SizedBox(height: 20),
           const Text('Tab切换测试:',

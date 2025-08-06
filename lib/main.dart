@@ -3,9 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_demo/core/router/app_router.dart';
 import 'package:flutter_demo/core/config/app_config.dart';
 import 'package:flutter_demo/core/init/app_init.dart';
-import 'package:flutter_demo/core/mvvm/route_aware_lifecycle.dart';
 import 'package:flutter_demo/l10n/gen/app_localizations.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,7 +38,7 @@ class MyApp extends ConsumerWidget {
       initialRoute: AppRouter.initialRoute,
       
       // 添加全局路由观察者
-      navigatorObservers: [globalRouteObserver],
+      navigatorObservers: [RouteObserver<ModalRoute<dynamic>>()],
       
       debugShowCheckedModeBanner: false,
     );

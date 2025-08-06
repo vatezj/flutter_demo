@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_demo/pages/home/details.dart';
 import 'package:flutter_demo/pages/home/indexPage.dart';
+import 'package:flutter_demo/pages/home/test_page.dart';
 import 'package:flutter_demo/pages/category/categoryPage.dart';
 import 'package:flutter_demo/pages/cart/cartPage.dart';
 import 'package:flutter_demo/pages/home/info.dart';
@@ -22,6 +23,7 @@ final _routes = RouteHelper.routeDefine({
   LoginPage: (_) => LoginPage(),
   DetailsPage: (_) => DetailsPage(),
   InfoPage: (_) => InfoPage(),
+  TestPage: (_) => TestPage(),
   BottomMenuBarPage: (_) => BottomMenuBarPage(),
 });
 

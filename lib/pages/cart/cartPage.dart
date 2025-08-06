@@ -7,8 +7,8 @@ import 'package:flutter_demo/pages/my/myPage.dart';
 import 'package:flutter_demo/core/router/context_extension.dart';
 import 'package:flutter_demo/pages/cart/cart_view_model.dart';
 import 'package:flutter_demo/core/mvvm/tab_view_model.dart';
-import 'package:flutter_demo/core/mvvm/hook_lifecycle.dart';
-import 'package:flutter_demo/core/mvvm/simple_page_lifecycle.dart';
+
+import 'package:flutter_demo/core/mvvm/direct_lifecycle.dart';
 
 class CartPage extends HookConsumerWidget {
   const CartPage({Key? key}) : super(key: key);
@@ -20,8 +20,8 @@ class CartPage extends HookConsumerWidget {
     final cartViewModel = ref.read(cartViewModelProvider.notifier);
     final tabViewModel = ref.read(tabViewModelProvider.notifier);
     
-    // 页面生命周期管理（简单版）
-    EnhancedSimplePageLifecycleHook.useEnhancedSimplePageLifecycle(
+    // 直接生命周期管理
+    DirectLifecycleHook.useDirectLifecycle(
       pageName: '购物车页面',
       onResume: () {
         print('-------------------------购物车页面 onResume');

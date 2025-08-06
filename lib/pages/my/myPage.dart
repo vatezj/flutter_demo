@@ -10,8 +10,8 @@ import 'package:flutter_demo/core/router/router.dart';
 import 'package:flutter_demo/core/router/context_extension.dart';
 import 'package:flutter_demo/pages/my/my_view_model.dart';
 import 'package:flutter_demo/core/mvvm/tab_view_model.dart';
-import 'package:flutter_demo/core/mvvm/hook_lifecycle.dart';
-import 'package:flutter_demo/core/mvvm/simple_page_lifecycle.dart';
+
+import 'package:flutter_demo/core/mvvm/direct_lifecycle.dart';
 
 class PageArgs {
   final int id;
@@ -50,8 +50,8 @@ class MyPage extends HookConsumerWidget {
     final myViewModel = ref.read(myViewModelProvider.notifier);
     final tabViewModel = ref.read(tabViewModelProvider.notifier);
     
-    // 页面生命周期管理（简单版）
-    EnhancedSimplePageLifecycleHook.useEnhancedSimplePageLifecycle(
+    // 直接生命周期管理
+    DirectLifecycleHook.useDirectLifecycle(
       pageName: '我的页面',
       onResume: () {
         print('-------------------------我的页面 onResume');
