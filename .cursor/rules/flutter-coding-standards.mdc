@@ -1,0 +1,28 @@
+# Flutter编码标准
+
+## 命名规范
+- 文件名使用小写字母和下划线，如：`home_page.dart`
+- 类名使用大驼峰命名法，如：`HomePage`
+- 变量和方法名使用小驼峰命名法，如：`userName`
+- 常量使用全大写和下划线，如：`MAX_COUNT`
+
+## 文件组织
+- 每个页面应该有对应的ViewModel文件
+- 使用MVVM架构模式
+- 将业务逻辑放在ViewModel中
+- UI组件放在对应的Page文件中
+
+## 代码结构
+- 导入顺序：Flutter核心库 -> 第三方库 -> 本地库
+- 使用const构造函数优化性能
+- 避免在build方法中创建新的对象
+- 使用StatelessWidget当不需要状态管理时
+
+## 状态管理
+- 使用ChangeNotifier进行状态管理
+- 在dispose方法中释放资源
+- 使用Provider或GetX进行依赖注入
+description:
+globs:
+alwaysApply: false
+---

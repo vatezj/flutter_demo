@@ -1,0 +1,28 @@
+# 国际化多语言支持指南
+
+## 核心文件
+- [lib/l10n/app_en.arb](mdc:lib/l10n/app_en.arb) - 英文语言包
+- [lib/l10n/app_zh.arb](mdc:lib/l10n/app_zh.arb) - 中文语言包
+- [lib/l10n/gen/app_localizations.dart](mdc:lib/l10n/gen/app_localizations.dart) - 生成的本地化类
+
+## 语言包配置
+- 在pubspec.yaml中配置flutter_localizations
+- 使用arb文件定义翻译文本
+- 支持参数化文本和复数形式
+- 自动生成本地化代码
+
+## 使用方法
+- 通过AppLocalizations.of(context)访问翻译
+- 支持动态语言切换
+- 使用context.locale获取当前语言
+- 实现语言偏好设置持久化
+
+## 最佳实践
+- 所有用户可见的文本都应该国际化
+- 使用有意义的键名便于维护
+- 支持RTL语言布局
+- 测试不同语言的文本长度适配
+description:
+globs:
+alwaysApply: false
+---

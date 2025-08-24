@@ -1,0 +1,30 @@
+# Flutter项目结构指南
+
+## 主要入口点
+- [main.dart](mdc:lib/main.dart) - 应用程序的主入口点
+
+## 核心架构
+- [lib/core/](mdc:lib/core/) - 核心功能模块
+  - [lib/core/mvvm/](mdc:lib/core/mvvm/) - MVVM架构实现
+  - [lib/core/router/](mdc:lib/core/router/) - 路由管理
+  - [lib/core/network/](mdc:lib/core/network/) - 网络请求
+  - [lib/core/layout/](mdc:lib/core/layout/) - 布局组件
+
+## 页面结构
+- [lib/pages/](mdc:lib/pages/) - 所有页面
+  - [lib/pages/home/](mdc:lib/pages/home/) - 首页相关
+  - [lib/pages/cart/](mdc:lib/pages/cart/) - 购物车页面
+  - [lib/pages/category/](mdc:lib/pages/category/) - 分类页面
+  - [lib/pages/my/](mdc:lib/pages/my/) - 个人中心
+  - [lib/pages/login/](mdc:lib/pages/login/) - 登录页面
+
+## 国际化
+- [lib/l10n/](mdc:lib/l10n/) - 多语言支持
+
+## 配置文件
+- [pubspec.yaml](mdc:pubspec.yaml) - 项目依赖配置
+- [analysis_options.yaml](mdc:analysis_options.yaml) - 代码分析配置
+description:
+globs:
+alwaysApply: false
+---

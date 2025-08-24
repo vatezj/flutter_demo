@@ -1,0 +1,27 @@
+# 路由导航系统指南
+
+## 核心文件
+- [lib/core/router/app_router.dart](mdc:lib/core/router/app_router.dart) - 应用路由配置
+- [lib/core/router/router.dart](mdc:lib/core/router/router.dart) - 路由实现
+- [lib/core/router/middleware.dart](mdc:lib/core/router/middleware.dart) - 路由中间件
+
+## 路由配置
+- 在app_router.dart中定义所有路由
+- 使用命名路由进行页面跳转
+- 支持路由参数传递
+- 实现路由中间件进行权限控制
+
+## 导航方法
+- 使用context.pushNamed()进行页面跳转
+- 使用context.pop()返回上一页
+- 支持路由参数和查询参数
+- 实现路由守卫和权限验证
+
+## 中间件使用
+- 在路由跳转前进行权限检查
+- 实现登录状态验证
+- 支持路由拦截和重定向
+description:
+globs:
+alwaysApply: false
+---

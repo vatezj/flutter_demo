@@ -1,0 +1,28 @@
+# 网络请求和API调用指南
+
+## 核心文件
+- [lib/core/network/http.dart](mdc:lib/core/network/http.dart) - HTTP客户端实现
+- [lib/core/network/api.dart](mdc:lib/core/network/api.dart) - API接口定义
+- [lib/core/network/interceptor.dart](mdc:lib/core/network/interceptor.dart) - 请求拦截器
+
+## HTTP客户端
+- 使用Dio作为HTTP客户端
+- 配置基础URL和超时时间
+- 实现请求和响应拦截器
+- 支持错误处理和重试机制
+
+## API接口
+- 在api.dart中定义所有接口
+- 使用统一的错误处理
+- 支持请求参数验证
+- 实现响应数据解析
+
+## 拦截器使用
+- 添加认证token到请求头
+- 统一处理错误响应
+- 实现请求日志记录
+- 支持请求重试和缓存
+description:
+globs:
+alwaysApply: false
+---
